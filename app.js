@@ -1268,7 +1268,7 @@
     else if (active.includes("asie")) list = WEBCAMS.asia;
     else if (active.includes("espace") || active.includes("iss")) list = WEBCAMS.space;
     else list = WEBCAMS.all || [];
-    const items = list.slice(0, 8);
+    const items = list.slice(0, 4);
     const countEl = document.getElementById("camCount");
     if (countEl) countEl.textContent = list.length;
     grid.innerHTML = items.map((c, i) => `
