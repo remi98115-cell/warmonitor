@@ -661,11 +661,12 @@
   function layoutMasonry() {
     const dash = document.getElementById("dashboard");
     if (!dash) return;
-    const rowH = parseFloat(getComputedStyle(dash).gridAutoRows) || 8;
-    const gap = parseFloat(getComputedStyle(dash).rowGap) || 8;
+    const rowH = parseFloat(getComputedStyle(dash).gridAutoRows) || 6;
+    const gap = parseFloat(getComputedStyle(dash).rowGap) || 6;
     dash.querySelectorAll(".dash-panel, .add-panel-tile").forEach(p => {
       if (p.hidden || p.classList.contains("world-monitor-bar")) return;
-      const h = p.getBoundingClientRect().height;
+      // Use scrollHeight to get full content height including unloaded iframes
+      const h = Math.max(p.getBoundingClientRect().height, p.scrollHeight);
       if (!h) return;
       const span = Math.max(1, Math.ceil((h + gap) / (rowH + gap)));
       p.style.gridRowEnd = `span ${span}`;
@@ -676,10 +677,14 @@
     cancelAnimationFrame(_masonryRaf);
     _masonryRaf = requestAnimationFrame(() => {
       layoutMasonry();
-      // Re-run one more time after images/iframes settle
-      setTimeout(layoutMasonry, 250);
+      // Multiple retries to catch iframes loading at different times
+      [200, 600, 1500, 3000].forEach(t => setTimeout(layoutMasonry, t));
     });
   }
+  // Re-trigger masonry when any iframe loads
+  document.addEventListener("load", e => {
+    if (e.target?.tagName === "IFRAME") scheduleMasonry();
+  }, true);
   // Observe panel resizes + window resize
   if (typeof ResizeObserver !== "undefined") {
     const ro = new ResizeObserver(() => scheduleMasonry());
