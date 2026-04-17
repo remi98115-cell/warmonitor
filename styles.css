@@ -780,10 +780,51 @@ body.light-mode .leaflet-tile { filter: none; }
 /* Responsive */
 @media (max-width: 1400px) { #dashboard { column-count: 2; } }
 @media (max-width: 900px) {
-  #dashboard { column-count: 1; }
-  #app { grid-template-columns: 1fr; grid-template-areas: "top" "main"; }
-  #sidebar { position: absolute; top: var(--topbar-h); left: 0; bottom: 0; width: 85vw; max-width: 320px; z-index: 1000; box-shadow: 4px 0 30px rgba(0,0,0,.7); transform: translateX(-100%); }
-  #app:not(.collapsed) #sidebar { transform: translateX(0); }
-  .brand-title { display: none; }
-  .monitor-brand .brand-ver { display: none; }
+  #dashboard { column-count: 1; padding: 6px; gap: 6px; }
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-areas: "top" "main";
+  }
+  #sidebar {
+    position: fixed;
+    top: var(--topbar-h);
+    left: 0;
+    bottom: 0;
+    width: 86vw;
+    max-width: 320px;
+    z-index: 1000;
+    box-shadow: 4px 0 30px rgba(0,0,0,.7);
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+  #app.sidebar-open #sidebar { transform: translateX(0); }
+  #app.sidebar-open::before {
+    content: ""; position: fixed; top: var(--topbar-h); left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.5); z-index: 999;
+  }
+  #topbar { padding: 0 8px; gap: 6px; }
+  .brand-title, .brand-ver { display: none; }
+  .monitor-brand { padding: 0 4px; }
+  .dashboards button span, .tb-btn span, .lang-select button span { display: none; }
+  .lang-select button { min-width: 36px; padding: 6px 8px; }
+  .defcon-label { display: none; }
+  .tb-sep { display: none; }
+  .dashboards { gap: 2px; }
+  .dashboards button { padding: 6px 8px; }
+  #map-section { height: 40vh; min-height: 240px; }
+  /* Hamburger button visible in topbar */
+  #mobileMenuBtn { display: inline-flex !important; }
+  .news-tabs button, .cam-tabs button { font-size: 11px; padding: 6px 8px; }
+  .weather-grid { grid-template-columns: repeat(3, 1fr); }
+  .cam-thumbs { grid-template-columns: repeat(2, 1fr); }
+  .stats-list { grid-template-columns: 1fr; }
 }
+@media (max-width: 500px) {
+  #map-section { height: 36vh; }
+  .weather-grid { grid-template-columns: repeat(2, 1fr); }
+  .weather-featured { grid-template-columns: 1fr; }
+  .weather-big-right { grid-template-columns: repeat(2, 1fr); }
+  .defcon-box { padding: 4px 8px; }
+  .defcon-value { font-size: 14px; }
+}
+#mobileMenuBtn { display: none; }
