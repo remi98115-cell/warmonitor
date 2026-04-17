@@ -752,8 +752,9 @@ body.light-mode .leaflet-tile { filter: none; }
 }
 .cam-thumbs {
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
-  max-height: 220px; overflow-y: auto;
+  max-height: 100px; overflow: hidden;
 }
+.cam-thumbs .cam-cell { aspect-ratio: 16/10; }
 .cam-thumbs .cam-cell {
   aspect-ratio: 16/11; position: relative; background: #000;
   border-radius: 3px; overflow: hidden; cursor: pointer;
