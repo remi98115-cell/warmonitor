@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Warmonitor — Real-Time Global Intelligence Dashboard</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- Top bar -->
+  <nav id="topbar">
+    <div class="tb-left">
+      <button class="dash-chip active" data-dash="world" title="Dashboard Monde — toutes les couches géopolitiques">🟢 <span>MONDE</span></button>
+      <button class="tb-icon" data-dash="tech" title="Dashboard Tech — datacenters, câbles sous-marins, cyber, GPS, orbital">💻</button>
+      <button class="tb-icon" data-dash="finance" title="Dashboard Finance — centres économiques, sanctions, commerce, matières premières">📈</button>
+      <button class="tb-icon" data-dash="commodity" title="Dashboard Commodity — minéraux critiques, pipelines, shipping, incendies">⛏️</button>
+      <button class="tb-icon" data-dash="goodnews" title="Dashboard Good News — mode zen, aucune alerte">☀️</button>
+      <div class="tb-sep"></div>
+      <div class="monitor-brand">
+        <span class="brand-logo">⬢</span>
+        <span class="brand-title">MONITOR</span>
+        <span class="brand-ver">v2.6.7</span>
+      </div>
+      <a class="gh-stars" href="#" title="GitHub">
+        <span>⭐</span><span id="ghStars">49k</span>
+      </a>
+    </div>
+
+    <div class="tb-center">
+      <div class="live-pill big"><span class="dot-live"></span> EN<br/>DIRECT</div>
+    </div>
+
+    <div class="tb-right">
+      <div class="lang-select">
+        <button id="langBtn">🌐 <span>Mondial</span> ▾</button>
+      </div>
+      <div class="defcon-box" id="defcon">
+        <span class="defcon-icon">⚠</span>
+        <span class="defcon-label">DEFCON</span>
+        <span class="defcon-value" id="defconValue">4</span>
+        <span class="defcon-delta" id="defconDelta">+0%</span>
+      </div>
+      <button class="tb-icon" id="settingsBtn" title="Paramètres">⚙️</button>
+      <button class="tb-icon" id="themeBtn" title="Thème">🌙</button>
+      <button class="tb-icon" id="fullscreen" title="Plein écran">⛶</button>
+    </div>
+  </nav>
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <section class="panel">
+      <div class="search-wrap">
+        <input id="search" type="text" placeholder="⌘K Recherche — pays, ville, événement…" autocomplete="off" />
+        <div id="searchResults" class="search-results" hidden></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <label class="panel-label">Plage temporelle</label>
+      <div class="chip-row" id="timeRange">
+        <button data-range="1h" title="Événements de la dernière heure">1h</button>
+        <button data-range="24h" title="Événements des 24 dernières heures">24h</button>
+        <button data-range="7d" class="active" title="Événements des 7 derniers jours">7d</button>
+        <button data-range="30d" title="Événements des 30 derniers jours">30d</button>
+        <button data-range="90d" title="Événements des 90 derniers jours">90d</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <label class="panel-label">Vue régionale</label>
+      <div class="chip-row wrap" id="viewSelect">
+        <button data-view="global" class="active" title="Vue mondiale (zoom 2)">Mondial</button>
+        <button data-view="americas" title="Centrer sur les Amériques">Amériques</button>
+        <button data-view="mena" title="Centrer sur Moyen-Orient et Afrique du Nord">MENA</button>
+        <button data-view="europe" title="Centrer sur l'Europe">Europe</button>
+        <button data-view="asia" title="Centrer sur l'Asie">Asie</button>
+        <button data-view="latam" title="Centrer sur l'Amérique latine">Am. latine</button>
+        <button data-view="africa" title="Centrer sur l'Afrique">Afrique</button>
+        <button data-view="oceania" title="Centrer sur l'Océanie">Océanie</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <label class="panel-label">Lecture temporelle</label>
+      <div class="playback">
+        <button id="pbBackFast" title="Recul rapide">⏪</button>
+        <button id="pbFirst" title="Début">⏮</button>
+        <button id="pbPrev" title="Précédent">◀</button>
+        <button id="pbLive" class="live active" title="Temps réel">EN<br/>DIRECT</button>
+        <button id="pbNext" title="Suivant">▶</button>
+        <button id="pbLast" title="Fin">⏭</button>
+      </div>
+      <input id="pbSlider" type="range" min="0" max="100" value="100" />
+      <div class="pb-time" id="pbTime">Temps réel</div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <label class="panel-label">Couches actives</label>
+        <div class="panel-actions">
+          <button class="mini" id="layersAll">Tout</button>
+          <button class="mini" id="layersNone">Aucun</button>
+        </div>
+      </div>
+      <ul class="layers" id="layers"></ul>
+    </section>
+
+    <section class="panel">
+      <label class="panel-label">Options d'affichage</label>
+      <div class="options">
+        <label class="opt"><input type="checkbox" id="optSound" /> <span>Alertes sonores</span></label>
+        <label class="opt"><input type="checkbox" id="optCluster" checked /> <span>Regrouper les marqueurs</span></label>
+        <label class="opt"><input type="checkbox" id="optHeatmap" /> <span>Carte thermique</span></label>
+        <label class="opt"><input type="checkbox" id="optLabels" checked /> <span>Étiquettes</span></label>
+      </div>
+    </section>
+
+    <section class="panel stats">
+      <label class="panel-label">Statistiques globales</label>
+      <ul class="stats-list" id="stats"></ul>
+    </section>
+
+    <section class="panel">
+      <label class="panel-label">Données</label>
+      <div class="chip-row">
+        <button class="mini" id="exportCsv">⬇ Exporter CSV</button>
+        <button class="mini" id="exportJson">⬇ Exporter JSON</button>
+      </div>
+    </section>
+
+    <footer class="side-footer">
+      <span id="updateInfo">Chargement…</span>
+      <button class="refresh" id="refresh" title="Actualiser">↻</button>
+    </footer>
+  </aside>
+
+  <!-- Main dashboard area -->
+  <main id="main">
+    <!-- Map section -->
+    <section id="map-section">
+      <div id="map"></div>
+
+      <div class="map-overlay top-left">
+        <div class="live-pill"><span class="dot-live"></span> LIVE</div>
+        <div class="clock" id="clock">--:--:-- UTC</div>
+      </div>
+
+      <div class="map-overlay top-right-ctl">
+        <button id="toggleSidebar" title="Masquer le panneau">≡</button>
+        <button id="mapMode2d3d" title="2D/3D"><span id="mapModeLabel">2D</span></button>
+        <button id="hideMapBtn" title="Masquer la carte">▼</button>
+        <button id="share" title="Copier le lien">⇪</button>
+      </div>
+
+      <div class="map-overlay top-right" id="legend"></div>
+
+      <div id="detailPanel" class="detail-panel" hidden>
+        <button class="detail-close" id="detailClose">×</button>
+        <div id="detailContent"></div>
+      </div>
+    </section>
+
+    <!-- Dashboard panels grid -->
+    <section id="dashboard" data-panels="news,camwall,insights,forecasts,instability,risk,intel,intellive,xsrc,market">
+
+      <!-- ACTUALITÉS -->
+      <div class="dash-panel" data-panel="news">
+        <div class="dash-head">
+          <h3>ACTUALITÉS EN DIRECT</h3>
+          <span class="count-badge" id="newsCount">93</span>
+          <div class="dash-actions">
+            <button class="icon-btn" title="Pause">⏸</button>
+            <button class="icon-btn" title="Muet">🔇</button>
+            <button class="icon-btn" title="Plein écran">⛶</button>
+          </div>
+        </div>
+        <div class="tabs-scroller">
+          <button class="tabs-arrow left" data-scroll="news" data-dir="-1" title="Défiler à gauche">‹</button>
+        <div class="news-tabs" id="newsTabs">
+          <button data-src="france24" class="active" title="France 24 — chaîne d'info française internationale (24/7)">🇫🇷 France 24</button>
+          <button data-src="france24en" title="France 24 English — international news in English">France 24 EN</button>
+          <button data-src="franceinfo" title="FranceInfo — info continue France (public)">FranceInfo</button>
+          <button data-src="aljazeera" title="Al Jazeera English — info Moyen-Orient et monde (Qatar)">🇶🇦 Al Jazeera</button>
+          <button data-src="dw" title="Deutsche Welle — info internationale en anglais (Allemagne)">🇩🇪 DW</button>
+          <button data-src="skynews" title="Sky News — info 24/7 (Royaume-Uni)">🇬🇧 Sky News</button>
+          <button data-src="skyarabia" title="Sky News Arabia — info arabe 24/7">Sky Arabia</button>
+          <button data-src="euronews" title="Euronews FR — info européenne en français">🇪🇺 Euronews FR</button>
+          <button data-src="euronewsen" title="Euronews English — European news in English">Euronews EN</button>
+          <button data-src="bloomberg" title="Bloomberg — marchés financiers et économie mondiale">📈 Bloomberg</button>
+          <button data-src="cnbc" title="CNBC TV18 — business news (Inde)">CNBC TV18</button>
+          <button data-src="cnn" title="CNN-News18 — info 24/7 (Inde, affilié CNN)">CNN-News18</button>
+          <button data-src="alarabiya" title="Al Arabiya — info arabe (Arabie saoudite)">Al Arabiya</button>
+          <button data-src="france24ar" title="France 24 Arabic — الأخبار الدولية">France 24 AR</button>
+          <button data-src="nhk" title="NHK World — info Japon et Asie">🇯🇵 NHK</button>
+          <button data-src="cgtn" title="CGTN — China Global Television Network">🇨🇳 CGTN</button>
+          <button data-src="trtworld" title="TRT World — info Turquie et monde">🇹🇷 TRT World</button>
+          <button data-src="i24" title="i24 NEWS — info Israël en anglais">🇮🇱 i24 NEWS</button>
+          <button data-src="arirang" title="Arirang — info Corée du Sud en anglais">🇰🇷 Arirang</button>
+          <button data-src="abc" title="ABC News — info États-Unis">ABC</button>
+          <button data-src="nbc" title="NBC News — info États-Unis">NBC</button>
+          <button data-src="reuters" title="Reuters — agence de presse internationale">Reuters</button>
+        </div>
+          <button class="tabs-arrow right" data-scroll="news" data-dir="1" title="Défiler à droite">›</button>
+        </div>
+        <div class="news-player" id="newsPlayer">
+          <div class="news-placeholder">
+            <div class="np-logo">📺</div>
+            <div class="np-title" id="npTitle">Flux France 24</div>
+            <div class="np-sub">Cliquez sur un onglet pour changer la source</div>
+          </div>
+        </div>
+        <div class="news-caption" id="newsCaption">
+          <span class="nc-tag">DIRECT</span>
+          <span id="newsHeadline">Flux d'actualités internationales</span>
+        </div>
+      </div>
+
+      <!-- MÉTÉO MONDE — featured city + thumbnails live Open-Meteo -->
+      <div class="dash-panel" data-panel="weather">
+        <div class="dash-head">
+          <h3>🌦 MÉTÉO MONDE</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="weatherCount">0</span>
+        </div>
+        <div class="cam-tabs" id="weatherTabs">
+          <button class="active" title="Zones de conflit — Tel Aviv, Kyiv, Tehran, Gaza…">🎯 Conflits</button>
+          <button title="Capitales financières mondiales">💰 Capitales</button>
+          <button title="Asie — Tokyo, Séoul, Taipei, Mumbai, Hong Kong">🌏 Asie</button>
+          <button title="Amériques — New York, Washington, Mexico, Rio">🇺🇸 Amériques</button>
+          <button title="Europe — Paris, Londres, Berlin, Moscou">🇪🇺 Europe</button>
+        </div>
+        <div class="weather-featured" id="weatherFeatured">
+          <div class="weather-big-left">
+            <div class="weather-city" id="wfCity">—</div>
+            <div class="weather-temp" id="wfTemp">—°</div>
+            <div class="weather-cond" id="wfCond">—</div>
+          </div>
+          <div class="weather-big-right">
+            <div class="weather-stat"><span class="ws-icon">💨</span><span class="ws-val" id="wfWind">—</span><span class="ws-lbl">km/h</span></div>
+            <div class="weather-stat"><span class="ws-icon">💧</span><span class="ws-val" id="wfRain">—</span><span class="ws-lbl">mm/h</span></div>
+            <div class="weather-stat"><span class="ws-icon">🌡</span><span class="ws-val" id="wfFeels">—</span><span class="ws-lbl">ressenti</span></div>
+            <div class="weather-stat"><span class="ws-icon">☀️</span><span class="ws-val" id="wfUv">—</span><span class="ws-lbl">UV</span></div>
+          </div>
+        </div>
+        <div class="weather-grid" id="weatherGrid"></div>
+      </div>
+
+      <!-- SÉISMES LIVE — USGS -->
+      <div class="dash-panel" data-panel="earthquakes">
+        <div class="dash-head">
+          <h3>🌋 SÉISMES LIVE (USGS)</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="quakesCount">0</span>
+        </div>
+        <ul class="quake-list" id="quakeList"></ul>
+      </div>
+
+      <!-- CAM EN DIRECT — seul panneau cam (featured + thumbnails) -->
+      <div class="dash-panel" data-panel="camwall">
+        <div class="dash-head">
+          <h3>🎥 CAM EN DIRECT</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="camCount">0</span>
+          <div class="dash-actions">
+            <button class="icon-btn" id="camExpandBtn" title="Agrandir la caméra en plein écran (Échap pour fermer)">⛶</button>
+          </div>
+        </div>
+        <div class="cam-tabs" id="camwallTabs">
+          <button class="active" title="Guerre Iran-Israël — cams Tehran, Tel Aviv, Jerusalem, Beyrouth, War Room">🎯 Iran-Israël</button>
+          <button title="Guerre Ukraine — cams Kyiv, Odessa, Kharkiv, Donetsk">⚔️ Ukraine</button>
+          <button title="Moyen-Orient étendu — Al Jazeera, Beyrouth, MELC">🌍 MENA</button>
+          <button title="Europe — cams de la guerre Ukraine">🇪🇺 Europe</button>
+          <button title="Amériques — Times Square NYC 4K (EarthCam)">🇺🇸 Amériques</button>
+          <button title="Asie — Taïwan (Danjiang, aéroport, TVBS), Séoul (Hangang)">🌏 Asie</button>
+          <button title="Espace / ISS — NASA Earth Stream, HD Views ISS, GlobalQuake">🛰 Espace / ISS</button>
+          <button title="Toutes les cams disponibles, dédupliquées">📷 Tous</button>
+        </div>
+        <div class="cam-featured" id="camFeatured">
+          <div class="cam-featured-title" id="camFeaturedTitle">—</div>
+        </div>
+        <div class="cam-thumbs" id="camwallGrid"></div>
+      </div>
+
+      <!-- INSIGHTS IA -->
+      <div class="dash-panel" data-panel="insights">
+        <div class="dash-head">
+          <h3>INSIGHTS IA <span class="help">?</span></h3>
+          <span class="pill-live">EN DIRECT</span>
+        </div>
+        <div class="insight-box" id="insightBox">
+          <div class="insight-head">🌍 WORLD BRIEF</div>
+          <div class="insight-body" id="insightBody">
+            Analyse géopolitique agrégée en cours — tensions multiples détectées sur le front est-européen et au Moyen-Orient. Activité militaire élevée. Pression sur les voies maritimes stratégiques (Hormuz, Bab-el-Mandeb).
+          </div>
+          <div class="insight-foot">
+            <span class="tag">Géopolitique</span>
+            <span class="tag">Énergie</span>
+            <span class="tag">Maritime</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI FORECASTS -->
+      <div class="dash-panel" data-panel="forecasts">
+        <div class="dash-head">
+          <h3>AI FORECASTS <span class="help">?</span></h3>
+          <span class="pill-live">EN DIRECT</span>
+          <span class="count-badge" id="forecastCount">14</span>
+        </div>
+        <div class="chip-row" id="forecastCat">
+          <button class="active">All</button>
+          <button>Conflict</button>
+          <button>Market</button>
+          <button>Supply Chain</button>
+          <button>Political</button>
+          <button>Military</button>
+          <button>Cyber</button>
+          <button>Infra</button>
+        </div>
+        <div class="chip-row wrap" id="forecastRegion">
+          <button class="active">All Regions</button>
+          <button>MENA</button>
+          <button>East Asia</button>
+          <button>Europe</button>
+          <button>South Asia</button>
+          <button>Africa</button>
+          <button>LatAm</button>
+          <button>N. America</button>
+        </div>
+        <ul class="forecast-list" id="forecastList"></ul>
+      </div>
+
+      <!-- INSTABILITÉ PAYS -->
+      <div class="dash-panel" data-panel="instability">
+        <div class="dash-head">
+          <h3>INSTABILITÉ PAYS <span class="help">?</span></h3>
+        </div>
+        <ul class="instab-list" id="instabList"></ul>
+      </div>
+
+      <!-- VUE D'ENSEMBLE RISQUES -->
+      <div class="dash-panel" data-panel="risk">
+        <div class="dash-head">
+          <h3>VUE D'ENSEMBLE DES RISQUES STRATÉGIQUES <span class="help">?</span></h3>
+          <span class="pill-live">EN DIRECT</span>
+        </div>
+        <div class="risk-gauge">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 120 120" class="gauge-svg">
+              <circle cx="60" cy="60" r="48" stroke="#222" stroke-width="10" fill="none"/>
+              <circle id="gaugeRing" cx="60" cy="60" r="48" stroke="#ffb020" stroke-width="10" fill="none"
+                stroke-dasharray="301" stroke-dashoffset="102" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+            </svg>
+            <div class="gauge-text">
+              <div class="gauge-val" id="riskVal">66</div>
+              <div class="gauge-lbl">ÉLEVÉ</div>
+            </div>
+          </div>
+          <div class="gauge-trend">
+            <div class="gtrend-label">TENDANCE</div>
+            <div class="gtrend-val"><span id="riskTrendArrow">→</span> <span id="riskTrend">Stable</span></div>
+          </div>
+        </div>
+
+        <!-- Métriques 2x2 -->
+        <div class="risk-metrics">
+          <div class="rmet">
+            <div class="rmet-val" id="metConvergence">0</div>
+            <div class="rmet-lbl">CONVERGENCE</div>
+          </div>
+          <div class="rmet">
+            <div class="rmet-val" id="metDeviation">0,0</div>
+            <div class="rmet-lbl">DÉVIATION CII</div>
+          </div>
+          <div class="rmet">
+            <div class="rmet-val" id="metInfra">0</div>
+            <div class="rmet-lbl">ÉVÉNEMENTS INFRA</div>
+          </div>
+          <div class="rmet">
+            <div class="rmet-val" id="metHigh">0</div>
+            <div class="rmet-lbl">ALERTES ÉLEVÉES</div>
+          </div>
+        </div>
+
+        <!-- Risques principaux -->
+        <div class="risk-section">
+          <div class="risk-section-title">RISQUES PRINCIPAUX</div>
+          <ol class="risk-top" id="riskTop"></ol>
+        </div>
+
+        <!-- Alertes récentes -->
+        <div class="risk-section">
+          <div class="risk-section-title">ALERTES RÉCENTES <span class="rsec-count" id="alertsCount">0</span></div>
+          <ul class="risk-alerts" id="riskAlerts"></ul>
+        </div>
+
+        <div class="risk-foot">
+          <span>Mis à jour : <span id="riskUpdated">—</span></span>
+          <button class="mini" id="riskRefresh">Actualiser</button>
+        </div>
+      </div>
+
+      <!-- FLUX DE RENSEIGNEMENTS -->
+      <div class="dash-panel" data-panel="intel">
+        <div class="dash-head">
+          <h3>FLUX DE RENSEIGNEMENTS</h3>
+          <span class="pill-live">EN DIRECT</span>
+          <div class="dash-actions">
+            <button class="icon-btn" title="Télécharger">⬇</button>
+            <button class="icon-btn" title="Magique">✨</button>
+          </div>
+        </div>
+        <ul class="intel-feed" id="intelFeed"></ul>
+      </div>
+
+      <!-- RENSEIGNEMENTS EN DIRECT -->
+      <div class="dash-panel" data-panel="intellive">
+        <div class="dash-head">
+          <h3>RENSEIGNEMENTS EN DIRECT <span class="help">?</span></h3>
+          <span class="count-badge">10</span>
+        </div>
+        <div class="chip-row" id="intelTabs">
+          <button class="active">✈ Activité militaire</button>
+          <button>🛡 Menaces cyber</button>
+          <button>💰 Économique</button>
+          <button>🌊 Maritime</button>
+        </div>
+        <ul class="intel-live" id="intelLive"></ul>
+      </div>
+
+      <!-- CROSS-SOURCE SIGNAL AGGREGATOR -->
+      <div class="dash-panel" data-panel="xsrc">
+        <div class="dash-head">
+          <h3>CROSS-SOURCE SIGNAL AGGREGATOR</h3>
+          <span class="count-badge">7</span>
+        </div>
+        <ul class="xsrc-list" id="xsrcList"></ul>
+      </div>
+
+      <!-- AI MARKET IMPLICATIONS — unlocked (test mode) -->
+      <div class="dash-panel" data-panel="market">
+        <div class="dash-head">
+          <h3>AI MARKET IMPLICATIONS <span class="help">?</span></h3>
+          <span class="pill-live">EN DIRECT</span>
+        </div>
+        <ul class="market-list" id="marketList"></ul>
+      </div>
+
+      <!-- ADD PANEL tile -->
+      <div class="add-panel-tile" id="addPanelTile">
+        <div class="add-panel-plus">＋</div>
+        <div class="add-panel-label">AJOUTER UN PANNEAU</div>
+        <div class="add-menu" id="addMenu" hidden></div>
+      </div>
+
+      <!-- WORLD MONITOR footer bar -->
+      <div class="dash-panel span-full world-monitor-bar">
+        <span>🌐 WORLD MONITOR · Warmonitor v2.6.7 · Temps réel · Sources : USGS · NASA EONET · Open-Meteo · GDELT · CISA</span>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Cam fullscreen modal -->
+  <div id="camModal" class="modal cam-modal" hidden>
+    <div class="cam-modal-box">
+      <button class="modal-close" id="camModalClose" title="Fermer (Échap)">×</button>
+      <div class="cam-modal-title" id="camModalTitle">—</div>
+      <div class="cam-modal-video" id="camModalVideo"></div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settingsModal" class="modal" hidden>
+    <div class="modal-box">
+      <button class="modal-close" data-close-modal>×</button>
+      <h3>Paramètres</h3>
+      <label class="opt"><input type="checkbox" id="setNotif" /> <span>Notifications bureau</span></label>
+      <label class="opt"><input type="checkbox" id="setAutoRefresh" checked /> <span>Rafraîchissement auto (5 min)</span></label>
+      <label class="opt"><input type="checkbox" id="setShowNeverAgain" /> <span>Ne plus afficher l'intro</span></label>
+      <hr />
+      <p class="small-note">Données agrégées depuis des sources publiques (USGS, NASA EONET, Open-Meteo, NOAA, GDELT, CISA, NASA FIRMS, etc.). Les couches sans API publique utilisent des datasets curés.</p>
+    </div>
+  </div>
+</div>
+
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-dot"></div>
+    <div class="splash-title">WARMONITOR</div>
+    <div class="splash-sub">Initialisation du tableau de bord…</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
