@@ -13,7 +13,6 @@ WM.LAYERS = [
   { id: "bases",         icon: "🏛",  label: "Bases militaires",             color: "#5cc2ff", cat: "mil" },
   { id: "nuclear",       icon: "☢",  label: "Sites nucléaires",             color: "#c86bff", cat: "nuclear" },
   { id: "gamma",         icon: "⚠",  label: "Irradiateurs gamma",           color: "#ffe84a", cat: "nuclear" },
-  { id: "radiation",     icon: "☢",  label: "Surveillance des radiations",  color: "#c86bff", cat: "nuclear" },
   { id: "cosmodromes",   icon: "🚀",  label: "Cosmodromes",                  color: "#b59aff", cat: "space" },
   { id: "cables",        icon: "🔌",  label: "Câbles sous-marins",           color: "#56d6c7", cat: "infra" },
   { id: "pipelines",     icon: "🛢",  label: "Oléoducs et gazoducs",         color: "#ffb020", cat: "infra" },
@@ -22,11 +21,6 @@ WM.LAYERS = [
   { id: "shipping",      icon: "🚢",  label: "Trafic maritime",              color: "#4fc3f7", cat: "trade" },
   { id: "aircraft",      icon: "✈",   label: "Avions en vol (live)",         color: "#00e5ff", cat: "trade", live: true },
   { id: "trade",         icon: "⚓",  label: "Routes commerciales",          color: "#22a3ff", cat: "trade" },
-  { id: "flights",       icon: "✈",  label: "Retards de vols",              color: "#ff8a3b", cat: "trade" },
-  { id: "protests",      icon: "📢",  label: "Manifestations",               color: "#ff9f43", cat: "social" },
-  { id: "ucdp",          icon: "⚔",  label: "Événements UCDP",              color: "#ff5050", cat: "geo" },
-  { id: "displacement",  icon: "👥",  label: "Flux de déplacement",          color: "#ff79b0", cat: "social" },
-  { id: "climate",       icon: "🌫",  label: "Anomalies climatiques",        color: "#4fc3f7", cat: "env" },
   { id: "weather",       icon: "⛈",  label: "Alertes météo",                color: "#22a3ff", cat: "env" },
   { id: "outages",       icon: "📡",  label: "Pannes Internet",              color: "#ff8a3b", cat: "cyber" },
   { id: "cyberThreats",  icon: "🛡",  label: "Menaces cyber",                color: "#00e5ff", cat: "cyber" },
@@ -226,11 +220,6 @@ WM.STATIC = {
     { lat: 33.74, lon: -118.27,title: "Los Angeles",        desc: "Premier port US.",            sev: "med", tags: ["USA"] },
   ],
 
-  flights: [],
-  protests: [],
-  displacement: [],
-  climate: [],
-
   outages: [
     { lat: 32.17, lon: -7.17, title: "Maroc — coupure internet",desc: "Panne partielle.",       sev: "med",  date: daysAgo(2), tags: ["Afrique"] },
     { lat: 30.00, lon: 31.25, title: "Égypte — ralentissement", desc: "Câble sous-marin affecté.",sev:"high", date: daysAgo(4), tags: ["Afrique"] },
@@ -321,13 +310,13 @@ WM.STATIC = {
   ],
 
   disease: [
-    { lat: -4.00, lon: 21.00, title: "RDC — Mpox",          desc: "Foyer épidémique actif.", sev: "high",  date: daysAgo(10), tags: ["Santé"] },
-    { lat: 20.59, lon: 78.96, title: "Inde — dengue",       desc: "Saison d'épidémie.",       sev: "med",   date: daysAgo(15), tags: ["Santé"] },
-    { lat: 9.00,  lon: 8.00,  title: "Nigeria — choléra",    desc: "Flambée signalée.",        sev: "med",   date: daysAgo(12), tags: ["Santé"] },
-    { lat: -15.00,lon: 30.00, title: "Malawi — choléra",     desc: "Épidémie.",                sev: "med",   date: daysAgo(18), tags: ["Santé"] },
+    { lat: -4.00, lon: 21.00, title: "RDC — Mpox",          desc: "Foyer épidémique actif (clade I).", sev: "high",  date: daysAgo(1), tags: ["Santé", "OMS"] },
+    { lat: 20.59, lon: 78.96, title: "Inde — dengue",       desc: "Saison d'épidémie active.",          sev: "med",   date: daysAgo(2), tags: ["Santé"] },
+    { lat: 9.00,  lon: 8.00,  title: "Nigeria — choléra",    desc: "Flambée signalée OMS.",             sev: "med",   date: daysAgo(3), tags: ["Santé"] },
+    { lat: -15.00,lon: 30.00, title: "Malawi — choléra",     desc: "Épidémie en cours.",                sev: "med",   date: daysAgo(2), tags: ["Santé"] },
+    { lat: 35.00, lon: 38.00, title: "Syrie — choléra",      desc: "Camps déplacés affectés.",          sev: "high",  date: daysAgo(4), tags: ["Santé"] },
+    { lat: 31.50, lon: 34.47, title: "Gaza — risques sanitaires", desc: "Eau contaminée, hépatite A.",   sev: "high",  date: daysAgo(2), tags: ["Santé"] },
   ],
-
-  radiation: [],
 };
 
 // ---------- LIVE FETCHERS ----------

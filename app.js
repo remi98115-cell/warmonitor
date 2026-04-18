@@ -34,7 +34,7 @@
     if (p.get("layers")) {
       p.get("layers").split(",").forEach(id => state.activeLayers.add(id));
     } else {
-      ["conflicts","bases","hotspots","nuclear","sanctions","weather","economic","waterways","outages","cyberThreats","military","natural","iranAttacks"]
+      ["conflicts","bases","hotspots","nuclear","sanctions","weather","economic","waterways","outages","cyberThreats","military","natural","iranAttacks","aircraft","shipping","disease"]
         .forEach(id => state.activeLayers.add(id));
     }
     if (p.get("dash")) state.dashboard = p.get("dash");
