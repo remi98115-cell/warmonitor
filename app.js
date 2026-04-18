@@ -106,9 +106,7 @@
         else state.activeLayers.add(l.id);
         li.classList.toggle("active");
         updateURL();
-        renderMapLayers();
-        renderStats();
-        renderLegend();
+        applyFilters(); // recompile state.filtered + re-render carte/stats/légende
       });
       ul.appendChild(li);
     });
@@ -1238,11 +1236,11 @@
     // Layer all/none
     document.getElementById("layersAll").addEventListener("click", () => {
       LAYERS.forEach(l => { if (!l.locked) state.activeLayers.add(l.id); });
-      renderLayers(); renderMapLayers(); renderStats(); renderLegend(); updateURL();
+      renderLayers(); applyFilters(); updateURL();
     });
     document.getElementById("layersNone").addEventListener("click", () => {
       state.activeLayers.clear();
-      renderLayers(); renderMapLayers(); renderStats(); renderLegend(); updateURL();
+      renderLayers(); applyFilters(); updateURL();
     });
 
     // Refresh + options
