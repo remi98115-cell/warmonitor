@@ -602,6 +602,9 @@ body.light-mode .leaflet-tile { filter: none; }
 .np-sub { font-size: 10px; color: var(--text-dim); }
 .news-caption { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; }
 .nc-tag { background: var(--accent); color: #fff; padding: 2px 6px; border-radius: 2px; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+.ad-tip { font-size: 10px; color: var(--text-dim); margin-top: 6px; padding: 5px 8px; background: rgba(0,229,255,.06); border-left: 2px solid var(--accent); border-radius: 2px; line-height: 1.4; }
+.ad-tip a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.ad-tip a:hover { text-decoration: underline; }
 
 /* Insights */
 .insight-box { background: var(--bg-3); border: 1px solid var(--border); border-radius: 4px; padding: 10px; }
