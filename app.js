@@ -114,25 +114,11 @@
     });
   }
 
+  // Met à jour seulement les badges count des couches (left sidebar)
+  // Les stat-cards severity sont gérées en live par updateLiveStats() depuis Instabilité
   function renderStats() {
-    const el = document.getElementById("stats");
-    if (!el) return;
-    let critical = 0, high = 0, med = 0, low = 0;
     const byLayer = {};
-    for (const e of state.filtered) {
-      if (e.sev === "critical") critical++;
-      else if (e.sev === "high") high++;
-      else if (e.sev === "med") med++;
-      else if (e.sev === "low") low++;
-      byLayer[e._layer] = (byLayer[e._layer] || 0) + 1;
-    }
-    el.innerHTML = `
-      <li class="stat-card critical"><div class="stat-label">Critiques</div><div class="stat-value">${critical}</div></li>
-      <li class="stat-card warn"><div class="stat-label">Élevés</div><div class="stat-value">${high}</div></li>
-      <li class="stat-card"><div class="stat-label">Moyens</div><div class="stat-value">${med}</div></li>
-      <li class="stat-card"><div class="stat-label">Faibles</div><div class="stat-value">${low}</div></li>
-      <li class="stat-card" style="grid-column:1/-1"><div class="stat-label">Total affichés</div><div class="stat-value">${state.filtered.length}</div></li>
-    `;
+    for (const e of state.filtered) byLayer[e._layer] = (byLayer[e._layer] || 0) + 1;
     LAYERS.forEach(l => {
       const c = document.querySelector(`[data-count="${l.id}"]`);
       if (c) c.textContent = byLayer[l.id] || 0;
@@ -171,7 +157,6 @@
     setUpdating(false);
     const info = document.getElementById("updateInfo");
     if (info) info.textContent = "MAJ " + state.lastUpdate.toLocaleTimeString("fr-FR");
-    updateDEFCON();
     renderDashboardPanels();
   }
 
@@ -284,15 +269,24 @@
     return Math.atan(-Math.cos(ha)/Math.tan(dec*Math.PI/180)) * 180/Math.PI;
   }
 
-  // DEFCON
-  function updateDEFCON() {
-    const score = state.filtered.reduce((a, e) => a + severityWeight(e.sev), 0);
+  // DEFCON — calculé live depuis la moyenne mondiale Instabilité Pays (GDELT)
+  // 1 = guerre majeure, 2 = mobilisation, 3 = alerte renforcée, 4 = alerte, 5 = paix
+  function updateDEFCON(avgScore) {
+    if (avgScore == null) return;
     let level = 5;
-    if (score > 40) level = 2; else if (score > 25) level = 3; else if (score > 12) level = 4;
-    const delta = Math.round(((score - 20) / 20) * 100);
+    if (avgScore >= 80) level = 1;
+    else if (avgScore >= 65) level = 2;
+    else if (avgScore >= 50) level = 3;
+    else if (avgScore >= 35) level = 4;
+    const prev = parseFloat(localStorage.getItem("wm_defcon_prev_avg") || avgScore);
+    const delta = prev > 0 ? Math.round(((avgScore - prev) / prev) * 100) : 0;
+    try { localStorage.setItem("wm_defcon_prev_avg", String(avgScore)); } catch {}
     const v = document.getElementById("defconValue"); if (v) v.textContent = level;
     const d = document.getElementById("defconDelta");
-    if (d) d.textContent = (delta >= 0 ? "+" : "") + delta + "%";
+    if (d) {
+      d.textContent = (delta >= 0 ? "+" : "") + delta + "%";
+      d.style.color = delta > 1 ? "var(--danger)" : delta < -1 ? "var(--ok)" : "";
+    }
   }
 
   // =========== DASHBOARD PANELS ===========
@@ -755,14 +749,14 @@
   // Instability — score live calculé depuis le ton GDELT par pays (24h)
   // GDELT exige des phrases ≥ 5 caractères entre guillemets — d'où "Iran Tehran" pour contourner.
   const INSTAB_COUNTRIES = [
-    { name: "Iran",    query: "Iran Tehran",   lat: 32,    lon: 53 },
-    { name: "Russia",  query: "Russia",        lat: 61,    lon: 105 },
-    { name: "Ukraine", query: "Ukraine",       lat: 49,    lon: 32 },
-    { name: "Israel",  query: "Israel",        lat: 31.5,  lon: 34.75 },
-    { name: "Sudan",   query: "Sudan",         lat: 15,    lon: 30 },
-    { name: "China",   query: "China Beijing", lat: 35,    lon: 105 },
-    { name: "Myanmar", query: "Myanmar",       lat: 21.9,  lon: 95.9 },
-    { name: "Haiti",   query: "Haiti",         lat: 18.97, lon: -72.3 },
+    { name: "Iran",    query: "Iran Tehran",   lat: 32,    lon: 53,     region: "MENA" },
+    { name: "Russia",  query: "Russia",        lat: 61,    lon: 105,    region: "Europe" },
+    { name: "Ukraine", query: "Ukraine",       lat: 49,    lon: 32,     region: "Europe" },
+    { name: "Israel",  query: "Israel",        lat: 31.5,  lon: 34.75,  region: "MENA" },
+    { name: "Sudan",   query: "Sudan",         lat: 15,    lon: 30,     region: "Afrique" },
+    { name: "China",   query: "China Beijing", lat: 35,    lon: 105,    region: "Asie" },
+    { name: "Myanmar", query: "Myanmar",       lat: 21.9,  lon: 95.9,   region: "Asie" },
+    { name: "Haiti",   query: "Haiti",         lat: 18.97, lon: -72.3,  region: "Amériques" },
   ];
   async function renderInstability() {
     const ul = document.getElementById("instabList");
@@ -912,6 +906,49 @@
         `<li>${escapeHtml(c.name)} <span style="color:var(--text-dim);font-weight:400">— score ${c.score} (ton ${c.tone.toFixed(1)})</span></li>`
       ).join("");
     }
+
+    // Stats par région (moyenne des scores Instabilité par zone)
+    const regions = {};
+    enriched.forEach(c => {
+      if (!regions[c.region]) regions[c.region] = { sum: 0, n: 0, articles: 0 };
+      regions[c.region].sum += c.score;
+      regions[c.region].n += 1;
+      regions[c.region].articles += c.articles || 0;
+    });
+    const regionList = document.getElementById("riskRegions");
+    if (regionList) {
+      const sorted = Object.entries(regions).map(([name, v]) => ({ name, avg: Math.round(v.sum / v.n), n: v.n, articles: v.articles })).sort((a, b) => b.avg - a.avg);
+      regionList.innerHTML = sorted.map(r => {
+        const col = r.avg >= 70 ? "var(--danger)" : r.avg >= 55 ? "var(--warn)" : r.avg >= 40 ? "var(--ok)" : "var(--text-dim)";
+        return `<li class="region-row"><span class="region-name">${escapeHtml(r.name)}</span><span class="region-bar"><span class="region-fill" style="width:${r.avg}%;background:${col}"></span></span><span class="region-score" style="color:${col}">${r.avg}</span><span class="region-meta">${r.n} pays</span></li>`;
+      }).join("");
+    }
+
+    // DEFCON topbar live
+    updateDEFCON(avg);
+    // Sidebar stats live
+    updateLiveStats(enriched);
+  }
+
+  // Sidebar : breakdown live des pays par tranche de score
+  function updateLiveStats(enriched) {
+    const el = document.getElementById("stats");
+    if (!el) return;
+    let crit = 0, hi = 0, mod = 0, low = 0, articles = 0;
+    enriched.forEach(c => {
+      if (c.score >= 70) crit++;
+      else if (c.score >= 55) hi++;
+      else if (c.score >= 40) mod++;
+      else low++;
+      articles += c.articles || 0;
+    });
+    el.innerHTML = `
+      <li class="stat-card critical"><div class="stat-label">Critiques</div><div class="stat-value">${crit}</div></li>
+      <li class="stat-card warn"><div class="stat-label">Élevés</div><div class="stat-value">${hi}</div></li>
+      <li class="stat-card"><div class="stat-label">Modérés</div><div class="stat-value">${mod}</div></li>
+      <li class="stat-card"><div class="stat-label">Stables</div><div class="stat-value">${low}</div></li>
+      <li class="stat-card" style="grid-column:1/-1"><div class="stat-label">Dépêches GDELT 24h</div><div class="stat-value">${articles}</div></li>
+    `;
   }
 
   // Insights — base (rapide, avant l'arrivée GDELT)

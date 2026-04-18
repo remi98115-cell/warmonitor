@@ -858,6 +858,16 @@ body.light-mode .leaflet-tile { filter: none; }
   font-size: 10px; color: var(--text-dim);
 }
 
+/* Régions (vue ensemble Risques) */
+.risk-regions { list-style: none; padding: 0; margin: 0; }
+.region-row { display: grid; grid-template-columns: 80px 1fr 32px 50px; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.region-row:last-child { border-bottom: none; }
+.region-name { font-weight: 600; color: var(--text); }
+.region-bar { height: 6px; background: var(--bg-3); border-radius: 3px; overflow: hidden; }
+.region-fill { display: block; height: 100%; border-radius: 3px; transition: width .3s; }
+.region-score { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.region-meta { font-size: 9px; color: var(--text-dim); text-align: right; }
+
 /* Intel feed */
 .intel-feed, .intel-live, .xsrc-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; max-height: 280px; }
 .intel-item {
