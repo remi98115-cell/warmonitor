@@ -304,6 +304,8 @@
     cyber:       { label: "Cybermenaces actives",                src: "CISA Known Exploited Vulnerabilities (gouv US)" },
     predictions: { label: "Prédictions",                        src: "Polymarket Gamma API · marchés de prédiction" },
     airlines:    { label: "Renseignements aériens",             src: "NOAA aviationweather.gov · METAR temps réel" },
+    maritime:    { label: "Trafic maritime temps réel",          src: "MarineTraffic AIS · positions navires live" },
+    aerien:      { label: "Trafic aérien temps réel",            src: "ADS-B Exchange · positions avions live" },
   };
 
   function renderDashboardPanels() {
