@@ -79,8 +79,11 @@
       updateURL();
     });
 
+    // Couches sans cluster : peu de markers et icônes spécifiques (ship, etc.)
+    const NO_CLUSTER = new Set(["shipping"]);
     LAYERS.forEach(l => {
-      const grp = state.clusterOn ? L.markerClusterGroup({
+      const useCluster = state.clusterOn && !NO_CLUSTER.has(l.id);
+      const grp = useCluster ? L.markerClusterGroup({
         maxClusterRadius: 48, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
       }) : L.layerGroup();
       markerGroups[l.id] = grp;
@@ -215,11 +218,26 @@
   function buildMarker(ev, layer) {
     const size = ev.sev === "critical" ? 14 : ev.sev === "high" ? 11 : ev.sev === "med" ? 9 : 7;
     const pulse = ev.sev === "critical" || ev.sev === "high" ? " marker-pulse" : "";
-    const icon = L.divIcon({
-      className: `custom-marker${pulse}`,
-      html: `<span style="background:${layer.color};width:${size}px;height:${size}px;border-radius:50%;display:block;color:${layer.color};"></span>`,
-      iconSize: [size+4, size+4], iconAnchor: [(size+4)/2, (size+4)/2],
-    });
+    let icon;
+    if (layer.id === "shipping") {
+      icon = L.divIcon({
+        className: "custom-marker ship-marker",
+        html: `<span style="font-size:18px;line-height:1;text-shadow:0 0 4px rgba(0,0,0,.9);filter:drop-shadow(0 0 2px ${layer.color})">🚢</span>`,
+        iconSize: [22, 22], iconAnchor: [11, 11],
+      });
+    } else if (layer.id === "aircraft") {
+      icon = L.divIcon({
+        className: "custom-marker aircraft-marker",
+        html: `<span style="font-size:14px;line-height:1;color:${layer.color};text-shadow:0 0 4px rgba(0,0,0,.9)">✈</span>`,
+        iconSize: [16, 16], iconAnchor: [8, 8],
+      });
+    } else {
+      icon = L.divIcon({
+        className: `custom-marker${pulse}`,
+        html: `<span style="background:${layer.color};width:${size}px;height:${size}px;border-radius:50%;display:block;color:${layer.color};"></span>`,
+        iconSize: [size+4, size+4], iconAnchor: [(size+4)/2, (size+4)/2],
+      });
+    }
     const m = L.marker([ev.lat, ev.lon], { icon });
     const html = `
       <div class="popup-title">${layer.icon} ${escapeHtml(ev.title || layer.label)}</div>
@@ -1395,10 +1413,12 @@
 
   function nudgeSlider(delta) { const s = document.getElementById("pbSlider"); s.value = Math.max(0, Math.min(100, +s.value + delta)); s.dispatchEvent(new Event("input")); }
   function rebuildGroups() {
+    const NO_CLUSTER = new Set(["shipping"]);
     LAYERS.forEach(l => {
       const oldG = markerGroups[l.id];
       if (oldG && map.hasLayer(oldG)) map.removeLayer(oldG);
-      markerGroups[l.id] = state.clusterOn ? L.markerClusterGroup({ maxClusterRadius: 48, showCoverageOnHover: false }) : L.layerGroup();
+      const useCluster = state.clusterOn && !NO_CLUSTER.has(l.id);
+      markerGroups[l.id] = useCluster ? L.markerClusterGroup({ maxClusterRadius: 48, showCoverageOnHover: false }) : L.layerGroup();
     });
   }
 
