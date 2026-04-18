@@ -309,11 +309,11 @@
     intellive:   { label: "Renseignements en direct",           src: "GDELT 2.0 filtré par catégorie · temps réel" },
     xsrc:        { label: "Agrégateur de signaux multi-sources",src: "Signaux corrélés : militaire, cyber, éco, diplo" },
     market:      { label: "Implications pour le marché de l'IA",src: "CoinGecko (crypto) · ExchangeRate (forex)" },
-    commodities: { label: "Matières premières",                 src: "Gold API · Energy markets · CoinGecko" },
-    supply:      { label: "Chaîne d'approvisionnement",         src: "Points d'étranglement · trafic maritime" },
-    predictions: { label: "Prédictions",                        src: "Polymarket API · marchés de prédiction" },
-    theaters:    { label: "Théâtres stratégiques",              src: "Analyse multi-couches par zone géopolitique" },
-    airlines:    { label: "Renseignements aériens",             src: "Agrégation statuts aéroports majeurs" },
+    commodities: { label: "Matières premières",                 src: "Yahoo Finance · gold-api · live spot prices" },
+    stocks:      { label: "Marchés boursiers",                  src: "Yahoo Finance · indices majeurs (différé ~15 min)" },
+    cyber:       { label: "Cybermenaces actives",                src: "CISA Known Exploited Vulnerabilities (gouv US)" },
+    predictions: { label: "Prédictions",                        src: "Polymarket Gamma API · marchés de prédiction" },
+    airlines:    { label: "Renseignements aériens",             src: "NOAA aviationweather.gov · METAR temps réel" },
   };
 
   function renderDashboardPanels() {
@@ -336,10 +336,10 @@
     renderWeather().catch(() => {});
     renderQuakes().catch(() => {});
     renderCommodities().catch(() => {});
-    renderSupply();
+    renderStocks().catch(() => {});
+    renderCyber().catch(() => {});
     renderPredictions().catch(() => {});
-    renderTheaters();
-    renderAirlines();
+    renderAirlines().catch(() => {});
   }
 
   // ===== MATIÈRES PREMIÈRES =====
@@ -363,33 +363,46 @@
     }).join("");
   }
 
-  // ===== CHAÎNE D'APPROVISIONNEMENT =====
-  const CHOKEPOINTS = [
-    { name: "Détroit d'Ormuz", severity: "critical", traffic: "21 Mb/j pétrole", status: "Conflit actif", dir: "est-ouest" },
-    { name: "Canal de Suez", severity: "critical", traffic: "12% commerce mondial", status: "Tensions Mer Rouge", dir: "nord-sud" },
-    { name: "Détroit de Malacca", severity: "high", traffic: "30% commerce", status: "Surveillance accrue", dir: "est-ouest" },
-    { name: "Bab-el-Mandeb", severity: "critical", traffic: "Mer Rouge", status: "Attaques Houthis", dir: "nord-sud" },
-    { name: "Canal de Panama", severity: "med", traffic: "6% commerce US", status: "Restrictions sécheresse", dir: "est-ouest" },
-    { name: "Bosphore", severity: "high", traffic: "Céréales Mer Noire", status: "Conflit Russie-Ukraine", dir: "nord-sud" },
-    { name: "Détroit de Kertch", severity: "critical", traffic: "Mer d'Azov", status: "Zone guerre active", dir: "nord-sud" },
-    { name: "Détroit de Gibraltar", severity: "med", traffic: "Méd./Atlantique", status: "Trafic normal", dir: "est-ouest" },
-  ];
-  function renderSupply() {
-    const ul = document.getElementById("supplyList");
+  // ===== MARCHÉS BOURSIERS (Yahoo Finance live) =====
+  async function renderStocks() {
+    const ul = document.getElementById("stocksList");
     if (!ul) return;
-    ul.innerHTML = CHOKEPOINTS.map(c => {
-      const sevCol = c.severity === "critical" ? "var(--danger)" : c.severity === "high" ? "var(--warn)" : "var(--ok)";
-      const sevLbl = c.severity === "critical" ? "CRITIQUE" : c.severity === "high" ? "ÉLEVÉ" : "MODÉRÉ";
-      return `<li class="supply-item">
-        <div class="supply-head">
-          <span class="supply-dot" style="background:${sevCol}"></span>
-          <span class="supply-name">${escapeHtml(c.name)}</span>
-          <span class="supply-sev" style="color:${sevCol};border-color:${sevCol}">${sevLbl}</span>
-        </div>
-        <div class="supply-meta">${escapeHtml(c.traffic)} · direction ${escapeHtml(c.dir)}</div>
-        <div class="supply-status">${escapeHtml(c.status)}</div>
+    ul.innerHTML = `<li style="color:var(--text-dim);text-align:center;padding:14px">Chargement Yahoo Finance…</li>`;
+    const items = await WM.liveFeeds.stocks();
+    const c = document.getElementById("stocksCount");
+    if (c) c.textContent = items.length;
+    if (!items.length) { ul.innerHTML = `<li style="color:var(--text-dim);text-align:center">Indisponible (CORS)</li>`; return; }
+    ul.innerHTML = items.map(s => {
+      const cls = s.delta >= 0 ? "up" : "down";
+      const sign = s.delta >= 0 ? "+" : "";
+      const price = typeof s.price === "number" ? s.price.toLocaleString("fr-FR", { maximumFractionDigits: 2 }) : s.price;
+      return `<li class="stock-item">
+        <div class="stock-name">${escapeHtml(s.ticker)}</div>
+        <div class="stock-price">${price}</div>
+        <div class="stock-delta ${cls}">${sign}${s.delta.toFixed(2)}%</div>
       </li>`;
     }).join("");
+  }
+
+  // ===== CYBERMENACES (CISA KEV live) =====
+  async function renderCyber() {
+    const ul = document.getElementById("cyberList");
+    if (!ul) return;
+    ul.innerHTML = `<li style="color:var(--text-dim);text-align:center;padding:14px">Chargement CISA…</li>`;
+    const items = await WM.liveFeeds.cisaKEV();
+    const c = document.getElementById("cyberCount");
+    if (c) c.textContent = items.length;
+    if (!items.length) { ul.innerHTML = `<li style="color:var(--text-dim);text-align:center">Indisponible</li>`; return; }
+    ul.innerHTML = items.slice(0, 20).map(v => `
+      <li class="cyber-item ${v.ransomware ? 'ransom' : ''}">
+        <div class="cyber-head">
+          <span class="cyber-cve">${escapeHtml(v.cve)}</span>
+          ${v.ransomware ? '<span class="cyber-ransom">RANSOMWARE</span>' : ''}
+          <span class="cyber-date">${escapeHtml(v.date || "")}</span>
+        </div>
+        <div class="cyber-name">${escapeHtml(v.name || "")}</div>
+        <div class="cyber-meta">${escapeHtml(v.vendor || "")} · ${escapeHtml(v.product || "")}</div>
+      </li>`).join("");
   }
 
   // ===== PRÉDICTIONS POLYMARKET =====
@@ -414,64 +427,38 @@
     }).join("");
   }
 
-  // ===== THÉÂTRES STRATÉGIQUES =====
-  const THEATERS = [
-    { name: "L'Iran",      posture: "NORME", crit: "CRIT", air: 4,  sea: null, trend: "stable" },
-    { name: "Taïwan",      posture: "NORME", crit: null,   air: null, sea: null, trend: "stable" },
-    { name: "Baltique",    posture: "NORME", crit: "CRIT", air: 4,  sea: 181, trend: "stable" },
-    { name: "Mer Noire",   posture: "NORME", crit: null,   air: null, sea: 2,  trend: "stable" },
-    { name: "Corée",       posture: "NORME", crit: null,   air: 1,  sea: null, trend: "stable" },
-    { name: "Mer de Chine",posture: "NORME", crit: null,   air: null, sea: null, trend: "stable" },
-    { name: "Arctique",    posture: "NORME", crit: null,   air: null, sea: null, trend: "stable" },
-    { name: "Golfe Persique", posture: "ALERTE", crit: "CRIT", air: 2, sea: 12, trend: "escalade" },
-  ];
-  function renderTheaters() {
-    const ul = document.getElementById("theaterList");
-    if (!ul) return;
-    ul.innerHTML = THEATERS.map(t => {
-      const crit = t.crit ? `<span class="th-crit">${t.crit}</span>` : "";
-      const air = t.air ? `<span class="th-stat"><span class="th-lbl">AIR</span> ✈ ${t.air}</span>` : "";
-      const sea = t.sea ? `<span class="th-stat"><span class="th-lbl">MER</span> ⚓ ${t.sea}</span>` : "";
-      const postCls = t.posture === "ALERTE" ? "pst-alert" : "pst-norm";
-      const trendCls = t.trend === "escalade" ? "trend-up" : t.trend === "baisse" ? "trend-dn" : "trend-st";
-      const trendArrow = t.trend === "escalade" ? "↗" : t.trend === "baisse" ? "↘" : "→";
-      return `<li class="theater-item">
-        <div class="th-row">
-          <span class="th-name">${escapeHtml(t.name)}</span>
-          ${crit}
-          <span class="th-post ${postCls}">${t.posture}</span>
-        </div>
-        <div class="th-stats">${air}${sea}</div>
-        <div class="th-trend ${trendCls}">${trendArrow} ${t.trend}</div>
-      </li>`;
-    }).join("");
-  }
-
-  // ===== RENSEIGNEMENTS AÉRIENS =====
+  // ===== RENSEIGNEMENTS AÉRIENS — METAR live (NOAA aviationweather.gov) =====
   const AIRPORTS = [
-    { code:"LHR", name:"Londres Heathrow",     status:"NORMALE",  delay:"—" },
-    { code:"CDG", name:"Paris Charles de Gaulle", status:"NORMALE", delay:"—" },
-    { code:"FRA", name:"Aéroport de Francfort", status:"GRAVE",    delay:"-98,3 % cxl" },
-    { code:"IST", name:"Aéroport d'Istanbul",  status:"MINEURE",   delay:"+7 min" },
-    { code:"DXB", name:"Dubai International",  status:"MODÉRÉE",   delay:"+33 min" },
-    { code:"RUH", name:"King Khalid International", status:"NORMALE", delay:"—" },
-    { code:"SAW", name:"Sabiha Gökçen International", status:"NORMALE", delay:"—" },
-    { code:"ESB", name:"Esenboğa International", status:"NORMALE", delay:"—" },
-    { code:"JFK", name:"John F Kennedy",       status:"MINEURE",   delay:"+12 min" },
-    { code:"LAX", name:"Los Angeles",          status:"NORMALE",   delay:"—" },
-    { code:"NRT", name:"Tokyo Narita",         status:"NORMALE",   delay:"—" },
-    { code:"HKG", name:"Hong Kong",            status:"MODÉRÉE",   delay:"+25 min" },
+    { code:"EGLL", name:"Londres Heathrow" },
+    { code:"LFPG", name:"Paris Charles de Gaulle" },
+    { code:"EDDF", name:"Francfort" },
+    { code:"LTFM", name:"Istanbul" },
+    { code:"OMDB", name:"Dubai International" },
+    { code:"OERK", name:"Riyad King Khalid" },
+    { code:"LTFJ", name:"Sabiha Gökçen" },
+    { code:"LTAC", name:"Ankara Esenboğa" },
+    { code:"KJFK", name:"John F Kennedy" },
+    { code:"KLAX", name:"Los Angeles" },
+    { code:"RJAA", name:"Tokyo Narita" },
+    { code:"VHHH", name:"Hong Kong" },
   ];
-  function renderAirlines() {
+  async function renderAirlines() {
     const ul = document.getElementById("airlineList");
     if (!ul) return;
+    ul.innerHTML = `<li style="color:var(--text-dim);text-align:center;padding:14px">Chargement METAR (NOAA)…</li>`;
+    const metar = await WM.liveFeeds.airportMetar(AIRPORTS.map(a => a.code));
+    const byCode = {};
+    metar.forEach(m => { byCode[m.code] = m; });
     ul.innerHTML = AIRPORTS.map(a => {
-      const col = a.status === "GRAVE" ? "var(--danger)" : a.status === "MODÉRÉE" ? "var(--warn)" : a.status === "MINEURE" ? "var(--accent-2)" : "var(--ok)";
-      return `<li class="airline-item">
+      const m = byCode[a.code];
+      const status = m?.status || "—";
+      const delay = m?.delay || "—";
+      const col = status === "GRAVE" ? "var(--danger)" : status === "MODÉRÉE" ? "var(--warn)" : status === "MINEURE" ? "var(--accent-2)" : status === "NORMALE" ? "var(--ok)" : "var(--text-dim)";
+      return `<li class="airline-item" title="${escapeHtml(m?.raw || '')}">
         <span class="ap-code">${a.code}</span>
         <span class="ap-name">${escapeHtml(a.name)}</span>
-        <span class="ap-status" style="color:${col}">${a.status}</span>
-        <span class="ap-delay">${escapeHtml(a.delay)}</span>
+        <span class="ap-status" style="color:${col}">${status}</span>
+        <span class="ap-delay">${escapeHtml(delay)}</span>
       </li>`;
     }).join("");
   }

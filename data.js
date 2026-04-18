@@ -383,26 +383,57 @@ WM.liveFeeds = {
     } catch (e) { console.warn("CoinGecko failed", e); return []; }
   },
 
-  // ExchangeRate.host — FX rates (free, no auth)
+  // Frankfurter.app — FX live + historique (gratuit, no auth, CORS OK, BCE comme source)
   async forex() {
     try {
-      const r = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
-      if (!r.ok) return [];
-      const j = await r.json();
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86400e3).toISOString().slice(0, 10);
+      const [tR, yR] = await Promise.all([
+        fetch(`https://api.frankfurter.app/latest?from=USD`),
+        fetch(`https://api.frankfurter.app/${yesterday}?from=USD`),
+      ]);
+      if (!tR.ok || !yR.ok) return [];
+      const t = await tR.json(), y = await yR.json();
       const pairs = [
-        { ticker: "EUR/USD",   rate: 1/j.rates.EUR, base: j.rates.EUR, desc: "Euro / Dollar" },
-        { ticker: "GBP/USD",   rate: 1/j.rates.GBP, base: j.rates.GBP, desc: "Livre / Dollar" },
-        { ticker: "USD/JPY",   rate: j.rates.JPY,   base: j.rates.JPY, desc: "Dollar / Yen" },
-        { ticker: "USD/CNY",   rate: j.rates.CNY,   base: j.rates.CNY, desc: "Dollar / Yuan" },
-        { ticker: "USD/RUB",   rate: j.rates.RUB,   base: j.rates.RUB, desc: "Dollar / Rouble" },
+        { ticker: "EUR/USD", inv: true,  cur: "EUR", desc: "Euro / Dollar" },
+        { ticker: "GBP/USD", inv: true,  cur: "GBP", desc: "Livre / Dollar" },
+        { ticker: "USD/JPY", inv: false, cur: "JPY", desc: "Dollar / Yen" },
+        { ticker: "USD/CNY", inv: false, cur: "CNY", desc: "Dollar / Yuan" },
+        { ticker: "USD/CHF", inv: false, cur: "CHF", desc: "Dollar / Franc CH" },
       ];
-      // Pseudo-delta based on hash of today (no historical endpoint on free tier)
-      return pairs.map(p => ({
-        ticker: p.ticker, price: p.rate.toFixed(4),
-        delta: ((p.rate % 1 * 5) - 2.5),
-        desc: p.desc
-      }));
-    } catch (e) { console.warn("Forex failed", e); return []; }
+      return pairs.map(p => {
+        const tr = t.rates?.[p.cur], yr = y.rates?.[p.cur];
+        if (tr == null || yr == null) return null;
+        const tp = p.inv ? 1/tr : tr;
+        const yp = p.inv ? 1/yr : yr;
+        const delta = ((tp - yp) / yp) * 100;
+        return { ticker: p.ticker, price: tp.toFixed(4), delta, desc: p.desc };
+      }).filter(Boolean);
+    } catch (e) { console.warn("Frankfurter forex failed", e); return []; }
+  },
+
+  // METAR (NOAA aviationweather.gov) — météo aéroports → score perturbation
+  async airportMetar(icaoList) {
+    const ids = icaoList.join(",");
+    const arr = await this._corsFetchJson(`https://aviationweather.gov/api/data/metar?ids=${ids}&format=json`);
+    if (!Array.isArray(arr)) return [];
+    try {
+      return arr.map(m => {
+        const wind = m.wspd || 0;        // nœuds
+        const gust = m.wgst || 0;
+        const visi = m.visib;             // miles
+        const visiNum = typeof visi === "string" ? parseFloat(visi) : visi;
+        const wxCode = (m.wxString || "").toLowerCase();
+        const hasStorm = /\bts|tsra|fc|sq/i.test(m.rawOb || "");
+        const hasSnow = /\bsn|sg|pl/i.test(m.rawOb || "");
+        const hasFog = /\bfg|br/i.test(m.rawOb || "");
+        let status = "NORMALE", delay = "—";
+        if (hasStorm || gust > 35 || (visiNum != null && visiNum < 1)) { status = "GRAVE"; delay = "Forte perturbation"; }
+        else if (hasSnow || gust > 25 || (visiNum != null && visiNum < 3)) { status = "MODÉRÉE"; delay = "Risque de retard"; }
+        else if (hasFog || wind > 20 || (visiNum != null && visiNum < 5)) { status = "MINEURE"; delay = "Surveillance"; }
+        return { code: m.icaoId, status, delay, wind, visi: visiNum, raw: m.rawOb };
+      });
+    } catch (e) { console.warn("METAR failed", e); return []; }
   },
 
   // ReliefWeb — humanitarian updates (country instability signals)
@@ -452,40 +483,130 @@ WM.liveFeeds = {
     } catch (e) { console.warn("Open-Meteo multi failed", e); return []; }
   },
 
-  // Commodities via CoinGecko commodities proxy (or fallback to free metals API)
+  // Yahoo Finance helper — chart v8 (no auth) via CORS proxy, parallel par symbole
+  async _yahooQuotes(symbols) {
+    const fetchOne = async (sym) => {
+      const base = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=2d&interval=1d`;
+      const attempts = [
+        "https://corsproxy.io/?" + encodeURIComponent(base),
+        "https://api.allorigins.win/raw?url=" + encodeURIComponent(base),
+      ];
+      for (const url of attempts) {
+        try {
+          const r = await fetch(url);
+          if (!r.ok) continue;
+          const j = await r.json();
+          const res = j?.chart?.result?.[0];
+          if (!res) continue;
+          const meta = res.meta || {};
+          const price = meta.regularMarketPrice;
+          const prev = meta.chartPreviousClose || meta.previousClose;
+          if (price == null) continue;
+          const delta = prev ? ((price - prev) / prev) * 100 : 0;
+          return { symbol: sym, regularMarketPrice: price, regularMarketChangePercent: delta, fullExchangeName: meta.exchangeName };
+        } catch {}
+      }
+      return null;
+    };
+    const results = await Promise.all(symbols.map(fetchOne));
+    return results.filter(Boolean);
+  },
+
+  // CORS proxy fallback générique
+  async _corsFetchJson(url) {
+    const attempts = [
+      url,
+      "https://corsproxy.io/?" + encodeURIComponent(url),
+      "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+    ];
+    for (const u of attempts) {
+      try {
+        const r = await fetch(u);
+        if (!r.ok) continue;
+        return await r.json();
+      } catch {}
+    }
+    return null;
+  },
+
+  // Commodities — METAUX via gold-api, ÉNERGIE via Yahoo Finance live
   async commodities(category = "metals") {
-    // CoinGecko supports some commodity-tokens; for real prices use a curated fallback
-    // Using a free proxy endpoint
+    if (category === "metals") {
+      const r = await fetch("https://api.gold-api.com/price/XAU").catch(()=>null);
+      const gold = r?.ok ? (await r.json()).price : null;
+      const silverR = await fetch("https://api.gold-api.com/price/XAG").catch(()=>null);
+      const silver = silverR?.ok ? (await silverR.json()).price : null;
+      // Reste via Yahoo (HG=F cuivre, PL=F platine, PA=F palladium)
+      const yahoo = await this._yahooQuotes(["HG=F","PL=F","PA=F"]);
+      const get = sym => yahoo.find(q => q.symbol === sym);
+      const cu = get("HG=F"), pt = get("PL=F"), pd = get("PA=F");
+      return [
+        { ticker:"OR",       price: gold || "—",   unit:"$/oz", delta: 0, desc:"Once troy" },
+        { ticker:"ARGENT",   price: silver || "—", unit:"$/oz", delta: 0, desc:"Once troy" },
+        { ticker:"CUIVRE",   price: cu?.regularMarketPrice ?? "—", unit:"$/lb", delta: cu?.regularMarketChangePercent ?? 0, desc:"Comex" },
+        { ticker:"PLATINE",  price: pt?.regularMarketPrice ?? "—", unit:"$/oz", delta: pt?.regularMarketChangePercent ?? 0, desc:"NYMEX" },
+        { ticker:"PALLADIUM",price: pd?.regularMarketPrice ?? "—", unit:"$/oz", delta: pd?.regularMarketChangePercent ?? 0, desc:"NYMEX" },
+      ].filter(c => c.price !== "—");
+    }
+    if (category === "energy") {
+      // Yahoo : CL=F (WTI), BZ=F (Brent), NG=F (Natural Gas), HO=F (Heating oil)
+      const items = await this._yahooQuotes(["BZ=F","CL=F","NG=F","HO=F","RB=F"]);
+      const get = sym => items.find(q => q.symbol === sym);
+      const map = [
+        { sym:"BZ=F", ticker:"BRENT",  unit:"$/bbl",   desc:"Pétrole brut" },
+        { sym:"CL=F", ticker:"WTI",    unit:"$/bbl",   desc:"West Texas" },
+        { sym:"NG=F", ticker:"GAZ NAT",unit:"$/MMBtu", desc:"Henry Hub" },
+        { sym:"HO=F", ticker:"FIOUL",  unit:"$/gal",   desc:"NY Harbor" },
+        { sym:"RB=F", ticker:"ESSENCE",unit:"$/gal",   desc:"RBOB" },
+      ];
+      return map.map(m => {
+        const q = get(m.sym);
+        return q ? { ticker: m.ticker, price: q.regularMarketPrice, unit: m.unit, delta: q.regularMarketChangePercent || 0, desc: m.desc } : null;
+      }).filter(Boolean);
+    }
+    // FX
+    return await this.forex();
+  },
+
+  // Indices boursiers majeurs (live Yahoo)
+  async stocks() {
+    const items = await this._yahooQuotes(["^GSPC","^IXIC","^DJI","^FTSE","^N225","^STOXX50E","^HSI","^FCHI"]);
+    const labels = {
+      "^GSPC":"S&P 500", "^IXIC":"NASDAQ", "^DJI":"DOW JONES",
+      "^FTSE":"FTSE 100", "^N225":"NIKKEI 225", "^STOXX50E":"EURO STOXX 50",
+      "^HSI":"HANG SENG", "^FCHI":"CAC 40",
+    };
+    return items.map(q => ({
+      ticker: labels[q.symbol] || q.symbol,
+      price: q.regularMarketPrice,
+      delta: q.regularMarketChangePercent || 0,
+      desc: q.fullExchangeName || "",
+    })).filter(s => s.price);
+  },
+
+  // CVE activement exploitées — NVD API (NIST, CORS OK), filtre KEV (CISA)
+  async cisaKEV() {
     try {
-      if (category === "metals") {
-        // Use Wise/exchangerate as proxy for gold — we use hardcoded snapshot + time-based variation
-        // Real API: https://api.metals.live/v1/spot (sometimes blocked)
-        const r = await fetch("https://api.gold-api.com/price/XAU").catch(()=>null);
-        const gold = r?.ok ? (await r.json()).price : 2850 + Math.sin(Date.now()/1e7)*40;
-        const silver = (await fetch("https://api.gold-api.com/price/XAG").then(r=>r.json()).catch(()=>({price:33+Math.sin(Date.now()/1e7)*1})))?.price || 33;
-        return [
-          { ticker:"OR",       price: gold,     unit:"$/oz", delta: ((Date.now()/1e8)%3)-1, desc:"Once troy" },
-          { ticker:"ARGENT",   price: silver,   unit:"$/oz", delta: ((Date.now()/1e8+1)%3)-1, desc:"Once troy" },
-          { ticker:"CUIVRE",   price: 4.28,     unit:"$/lb", delta: 0.8, desc:"Livre métrique" },
-          { ticker:"PLATINE",  price: 970,      unit:"$/oz", delta: -0.3, desc:"Once troy" },
-          { ticker:"PALLADIUM",price: 1020,     unit:"$/oz", delta: 1.2, desc:"Once troy" },
-          { ticker:"ALUMINIUM",price: 2650,     unit:"$/t", delta: 0.5, desc:"Tonne" },
-        ];
-      }
-      if (category === "energy") {
-        return [
-          { ticker:"BRENT",   price: 78.5, unit:"$/bbl", delta:  0.9, desc:"Pétrole brut" },
-          { ticker:"WTI",     price: 74.2, unit:"$/bbl", delta:  1.1, desc:"West Texas" },
-          { ticker:"GAZ NAT", price: 3.45, unit:"$/MMBtu", delta: -0.4, desc:"Henry Hub" },
-          { ticker:"GASOIL",  price: 720,  unit:"$/t", delta:  0.6, desc:"Gazole ICE" },
-          { ticker:"URANIUM", price: 82,   unit:"$/lb", delta:  0.2, desc:"U3O8" },
-          { ticker:"CHARBON", price: 135,  unit:"$/t", delta: -0.8, desc:"Newcastle" },
-        ];
-      }
-      // FX
-      const fx = await this.forex();
-      return fx || [];
-    } catch (e) { return []; }
+      // 1) total
+      const head = await fetch("https://services.nvd.nist.gov/rest/json/cves/2.0?hasKev&resultsPerPage=1");
+      if (!head.ok) return [];
+      const total = (await head.json()).totalResults || 0;
+      const startIndex = Math.max(0, total - 40);
+      // 2) dernières entrées
+      const r = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?hasKev&resultsPerPage=40&startIndex=${startIndex}`);
+      if (!r.ok) return [];
+      const j = await r.json();
+      const items = (j.vulnerabilities || []).map(x => x.cve);
+      items.sort((a, b) => new Date(b.cisaExploitAdd || 0) - new Date(a.cisaExploitAdd || 0));
+      return items.slice(0, 30).map(v => ({
+        cve: v.id,
+        name: v.cisaVulnerabilityName || v.descriptions?.find(d=>d.lang==="en")?.value?.slice(0, 100) || "",
+        vendor: "",
+        product: v.cisaRequiredAction ? "Action requise CISA" : "",
+        date: v.cisaExploitAdd ? v.cisaExploitAdd.slice(0, 10) : "",
+        ransomware: false,
+      }));
+    } catch (e) { console.warn("NVD KEV failed", e); return []; }
   },
 
   // Polymarket public API — prediction markets (avec proxy CORS fallback)

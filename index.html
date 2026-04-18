@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=10" />
+<link rel="stylesheet" href="styles.css?v=14" />
 </head>
 <body>
 <div id="app">
@@ -373,13 +373,14 @@
         <div class="commo-grid" id="commoGrid"></div>
       </div>
 
-      <!-- CHAÎNE D'APPROVISIONNEMENT -->
-      <div class="dash-panel" data-panel="supply">
+      <!-- MARCHÉS BOURSIERS — Yahoo Finance live -->
+      <div class="dash-panel" data-panel="stocks">
         <div class="dash-head">
-          <h3>⚓ CHAÎNE D'APPROVISIONNEMENT <span class="help">?</span></h3>
-          <span class="pill-live">EN DIRECT</span>
+          <h3>📊 MARCHÉS BOURSIERS</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="stocksCount">0</span>
         </div>
-        <ul class="supply-list" id="supplyList"></ul>
+        <ul class="stocks-list" id="stocksList"></ul>
       </div>
 
       <!-- PRÉDICTIONS POLYMARKET -->
@@ -391,12 +392,14 @@
         <ul class="pred-list" id="predList"></ul>
       </div>
 
-      <!-- THÉÂTRES STRATÉGIQUES -->
-      <div class="dash-panel" data-panel="theaters">
+      <!-- CYBERMENACES (CISA KEV — vraies CVE exploitées) -->
+      <div class="dash-panel" data-panel="cyber">
         <div class="dash-head">
-          <h3>🎖 THÉÂTRES STRATÉGIQUES <span class="help">?</span></h3>
+          <h3>🛡 CYBERMENACES ACTIVES</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="cyberCount">0</span>
         </div>
-        <ul class="theater-list" id="theaterList"></ul>
+        <ul class="cyber-list" id="cyberList"></ul>
       </div>
 
       <!-- RENSEIGNEMENTS AÉRIENS -->
@@ -578,7 +581,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="data.js?v=10"></script>
-<script src="app.js?v=10"></script>
+<script src="data.js?v=14"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>

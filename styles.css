@@ -469,9 +469,9 @@ body.light-mode .leaflet-tile { filter: none; }
 
 /* Le scroll est géré par .dash-panel — listes internes en flux normal */
 .intel-feed, .intel-live, .xsrc-list, .market-list, .quake-list,
-.airline-list, .supply-list, .pred-list, .risk-alerts,
-.weather-grid, .instab-list, .commo-grid, .theater-list,
-.forecast-list { max-height: none !important; overflow: visible !important; }
+.airline-list, .pred-list, .risk-alerts,
+.weather-grid, .instab-list, .commo-grid,
+.forecast-list, .stocks-list, .cyber-list { max-height: none !important; overflow: visible !important; }
 .dash-panel[hidden] { display: none !important; }
 
 /* Drag-drop verrouillé : pas de handle visible, pas de cursor grab */
@@ -642,15 +642,25 @@ body.light-mode .leaflet-tile { filter: none; }
 .commo-delta.up { color: var(--ok); }
 .commo-delta.down { color: var(--danger); }
 
-/* Supply chain */
-.supply-list { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto; }
-.supply-item { padding: 7px 8px; border-bottom: 1px solid var(--border); font-size: 11px; }
-.supply-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-.supply-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.supply-name { flex: 1; font-weight: 600; }
-.supply-sev { font-size: 9px; padding: 1px 5px; border-radius: 2px; border: 1px solid; font-weight: 700; letter-spacing: .5px; }
-.supply-meta { font-size: 10px; color: var(--text-dim); }
-.supply-status { font-size: 10px; color: var(--text); margin-top: 2px; }
+/* Marchés boursiers (Yahoo) */
+.stocks-list { list-style: none; padding: 0; margin: 0; }
+.stock-item { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 7px 4px; border-bottom: 1px solid var(--border); font-size: 11px; align-items: center; }
+.stock-name { font-weight: 700; letter-spacing: .5px; }
+.stock-price { font-variant-numeric: tabular-nums; color: var(--text); }
+.stock-delta { font-weight: 700; min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+.stock-delta.up { color: var(--ok); }
+.stock-delta.down { color: var(--danger); }
+
+/* Cybermenaces (CISA KEV) */
+.cyber-list { list-style: none; padding: 0; margin: 0; }
+.cyber-item { padding: 7px 4px; border-bottom: 1px solid var(--border); font-size: 11px; }
+.cyber-item.ransom { background: rgba(255,48,64,.06); border-left: 2px solid var(--danger); padding-left: 8px; }
+.cyber-head { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.cyber-cve { font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700; color: var(--accent); }
+.cyber-ransom { background: var(--danger); color: #fff; font-size: 8px; padding: 1px 5px; border-radius: 2px; font-weight: 700; letter-spacing: .5px; }
+.cyber-date { margin-left: auto; font-size: 9px; color: var(--text-dim); }
+.cyber-name { font-size: 11px; line-height: 1.3; color: var(--text); margin-bottom: 2px; }
+.cyber-meta { font-size: 9px; color: var(--text-dim); }
 
 /* Predictions */
 .pred-list { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto; }
@@ -661,23 +671,6 @@ body.light-mode .leaflet-tile { filter: none; }
 .pred-oui { background: rgba(34,211,154,.8); text-align: center; min-width: 40px; }
 .pred-non { background: rgba(255,48,64,.8); text-align: center; min-width: 40px; }
 .pred-meta { font-size: 9px; color: var(--text-dim); }
-
-/* Strategic theaters */
-.theater-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
-.theater-item { background: var(--bg-3); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; }
-.th-row { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
-.th-name { flex: 1; font-size: 11px; font-weight: 600; }
-.th-crit { background: var(--danger); color: #fff; padding: 1px 4px; font-size: 8px; font-weight: 700; border-radius: 2px; letter-spacing: .5px; }
-.th-post { font-size: 8px; padding: 1px 5px; border-radius: 2px; font-weight: 700; letter-spacing: .5px; }
-.pst-norm { background: rgba(34,211,154,.15); color: var(--ok); border: 1px solid var(--ok); }
-.pst-alert { background: rgba(255,48,64,.15); color: var(--danger); border: 1px solid var(--danger); }
-.th-stats { display: flex; gap: 6px; font-size: 10px; }
-.th-stat { display: inline-flex; gap: 3px; }
-.th-lbl { color: var(--text-dim); font-size: 8px; }
-.th-trend { font-size: 9px; margin-top: 2px; }
-.trend-up { color: var(--danger); }
-.trend-dn { color: var(--ok); }
-.trend-st { color: var(--text-dim); }
 
 /* Airlines */
 .airline-list { list-style: none; padding: 0; margin: 0; max-height: 260px; overflow-y: auto; }
