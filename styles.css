@@ -158,7 +158,17 @@ body.light-mode {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 0 8px;
 }
-.brand-logo { color: var(--accent); font-size: 18px; animation: pulse 2s infinite; }
+.brand-logo { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(0,229,255,.5)); }
+.brand-logo svg { width: 100%; height: 100%; display: block; }
+.brand-logo svg ellipse { animation: argos-iris-pulse 2.5s ease-in-out infinite; transform-origin: center; }
+.brand-logo .argos-eyes circle { animation: argos-eye-blink 4s ease-in-out infinite; transform-origin: center; }
+.brand-logo .argos-eyes circle:nth-child(2n)  { animation-delay: .3s; }
+.brand-logo .argos-eyes circle:nth-child(3n)  { animation-delay: .7s; }
+.brand-logo .argos-eyes circle:nth-child(5n)  { animation-delay: 1.1s; }
+.brand-logo .argos-eyes circle:nth-child(7n)  { animation-delay: 1.5s; }
+.brand-logo-sm { width: 18px; height: 18px; }
+@keyframes argos-iris-pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+@keyframes argos-eye-blink { 0%,90%,100% { opacity: .55; } 95% { opacity: .15; } }
 .brand-title { font-weight: 700; font-size: 15px; letter-spacing: 3px; }
 .brand-ver { color: var(--text-dim); font-size: 10px; letter-spacing: 1px; }
 @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.15); opacity: .7; } }
@@ -938,6 +948,13 @@ body.light-mode .leaflet-tile { filter: none; }
 #splash.hide { opacity: 0; pointer-events: none; }
 .splash-inner { text-align: center; }
 .splash-dot { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); margin: 0 auto 20px; animation: pulse 1.2s infinite; box-shadow: 0 0 40px var(--accent); }
+.splash-logo { width: 96px; height: 96px; margin: 0 auto 20px; filter: drop-shadow(0 0 30px rgba(0,229,255,.8)); animation: argos-spin 8s linear infinite; }
+.splash-logo svg { width: 100%; height: 100%; display: block; }
+.splash-logo .splash-eyes circle { animation: argos-eye-blink 3s ease-in-out infinite; }
+.splash-logo .splash-eyes circle:nth-child(2n) { animation-delay: .4s; }
+.splash-logo .splash-eyes circle:nth-child(3n) { animation-delay: .8s; }
+.splash-logo .splash-eyes circle:nth-child(5n) { animation-delay: 1.2s; }
+@keyframes argos-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .splash-title { font-size: 24px; font-weight: 700; letter-spacing: 6px; margin-bottom: 6px; }
 .splash-sub { font-size: 11px; color: var(--text-dim); letter-spacing: 2px; }
 
