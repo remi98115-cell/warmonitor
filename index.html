@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=9" />
+<link rel="stylesheet" href="styles.css?v=10" />
 </head>
 <body>
 <div id="app">
@@ -253,51 +253,7 @@
         <div class="weather-grid" id="weatherGrid"></div>
       </div>
 
-      <!-- SÉISMES LIVE — USGS -->
-      <div class="dash-panel" data-panel="earthquakes">
-        <div class="dash-head">
-          <h3>🌋 SÉISMES EN DIRECT (USGS)</h3>
-          <span class="pill-live">LIVE</span>
-          <span class="count-badge" id="quakesCount">0</span>
-        </div>
-        <ul class="quake-list" id="quakeList"></ul>
-      </div>
-
-      <!-- CAM EN DIRECT — seul panneau cam (featured + thumbnails) -->
-      <div class="dash-panel" data-panel="camwall">
-        <div class="dash-head">
-          <h3>🎥 CAM EN DIRECT</h3>
-          <span class="pill-live">LIVE</span>
-          <span class="count-badge" id="camCount">0</span>
-          <div class="dash-actions">
-            <button class="icon-btn" id="camExpandBtn" title="Agrandir la caméra en plein écran (Échap pour fermer)">⛶</button>
-          </div>
-        </div>
-        <div class="cam-tabs" id="camwallTabs">
-          <button class="active" title="Guerre Iran-Israël — cams Tehran, Tel Aviv, Jerusalem, Beyrouth, War Room">🎯 Iran-Israël</button>
-          <button title="Guerre Ukraine — cams Kyiv, Odessa, Kharkiv, Donetsk">⚔️ Ukraine</button>
-          <button title="Moyen-Orient étendu — Al Jazeera, Beyrouth, MELC">🌍 MENA</button>
-          <button title="Europe — cams de la guerre Ukraine">🇪🇺 Europe</button>
-          <button title="Amériques — Times Square NYC 4K (EarthCam)">🇺🇸 Amériques</button>
-          <button title="Asie — Taïwan (Danjiang, aéroport, TVBS), Séoul (Hangang)">🌏 Asie</button>
-          <button title="Espace / ISS — NASA Earth Stream, HD Views ISS, GlobalQuake">🛰 Espace / ISS</button>
-          <button title="Toutes les cams disponibles, dédupliquées">📷 Tous</button>
-        </div>
-        <div class="cam-featured" id="camFeatured">
-          <div class="cam-featured-title" id="camFeaturedTitle">—</div>
-        </div>
-        <div class="cam-thumbs" id="camwallGrid"></div>
-      </div>
-
-      <!-- INSTABILITÉ PAYS -->
-      <div class="dash-panel" data-panel="instability">
-        <div class="dash-head">
-          <h3>INSTABILITÉ PAYS <span class="help">?</span></h3>
-        </div>
-        <ul class="instab-list" id="instabList"></ul>
-      </div>
-
-      <!-- VUE D'ENSEMBLE RISQUES -->
+      <!-- VUE D'ENSEMBLE RISQUES (placé en haut à droite des news) -->
       <div class="dash-panel" data-panel="risk">
         <div class="dash-head">
           <h3>VUE D'ENSEMBLE DES RISQUES STRATÉGIQUES <span class="help">?</span></h3>
@@ -357,6 +313,50 @@
           <span>Mis à jour : <span id="riskUpdated">—</span></span>
           <button class="mini" id="riskRefresh">Actualiser</button>
         </div>
+      </div>
+
+      <!-- CAM EN DIRECT — seul panneau cam (featured + thumbnails) -->
+      <div class="dash-panel" data-panel="camwall">
+        <div class="dash-head">
+          <h3>🎥 CAM EN DIRECT</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="camCount">0</span>
+          <div class="dash-actions">
+            <button class="icon-btn" id="camExpandBtn" title="Agrandir la caméra en plein écran (Échap pour fermer)">⛶</button>
+          </div>
+        </div>
+        <div class="cam-tabs" id="camwallTabs">
+          <button class="active" title="Guerre Iran-Israël — cams Tehran, Tel Aviv, Jerusalem, Beyrouth, War Room">🎯 Iran-Israël</button>
+          <button title="Guerre Ukraine — cams Kyiv, Odessa, Kharkiv, Donetsk">⚔️ Ukraine</button>
+          <button title="Moyen-Orient étendu — Al Jazeera, Beyrouth, MELC">🌍 MENA</button>
+          <button title="Europe — cams de la guerre Ukraine">🇪🇺 Europe</button>
+          <button title="Amériques — Times Square NYC 4K (EarthCam)">🇺🇸 Amériques</button>
+          <button title="Asie — Taïwan (Danjiang, aéroport, TVBS), Séoul (Hangang)">🌏 Asie</button>
+          <button title="Espace / ISS — NASA Earth Stream, HD Views ISS, GlobalQuake">🛰 Espace / ISS</button>
+          <button title="Toutes les cams disponibles, dédupliquées">📷 Tous</button>
+        </div>
+        <div class="cam-featured" id="camFeatured">
+          <div class="cam-featured-title" id="camFeaturedTitle">—</div>
+        </div>
+        <div class="cam-thumbs" id="camwallGrid"></div>
+      </div>
+
+      <!-- INSTABILITÉ PAYS -->
+      <div class="dash-panel" data-panel="instability">
+        <div class="dash-head">
+          <h3>INSTABILITÉ PAYS <span class="help">?</span></h3>
+        </div>
+        <ul class="instab-list" id="instabList"></ul>
+      </div>
+
+      <!-- SÉISMES LIVE — USGS (placé après instabilité) -->
+      <div class="dash-panel" data-panel="earthquakes">
+        <div class="dash-head">
+          <h3>🌋 SÉISMES EN DIRECT (USGS)</h3>
+          <span class="pill-live">LIVE</span>
+          <span class="count-badge" id="quakesCount">0</span>
+        </div>
+        <ul class="quake-list" id="quakeList"></ul>
       </div>
 
       <!-- MATIÈRES PREMIÈRES -->
@@ -578,7 +578,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="data.js?v=9"></script>
-<script src="app.js?v=9"></script>
+<script src="data.js?v=10"></script>
+<script src="app.js?v=10"></script>
 </body>
 </html>
