@@ -57,15 +57,19 @@
   function initMap() {
     map = L.map("map", {
       zoomControl: true,
-      worldCopyJump: true,
+      worldCopyJump: false,
       minZoom: 2,
       maxZoom: 12,
       preferCanvas: true,
+      maxBounds: [[-85, -180], [85, 180]],
+      maxBoundsViscosity: 1.0,
     }).setView(state.center, state.zoom);
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; OSM · CartoDB · Argos',
       subdomains: "abcd",
+      noWrap: true,
+      bounds: [[-90, -180], [90, 180]],
     }).addTo(map);
 
     map.on("moveend", () => {
