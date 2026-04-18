@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=35" />
+<link rel="stylesheet" href="styles.css?v=36" />
 </head>
 <body>
 <div id="app">
@@ -427,8 +427,16 @@
         <ul class="cyber-list" id="cyberList"></ul>
       </div>
 
-      <!-- TRAFIC MARITIME LIVE — MarineTraffic embed -->
-      <div class="dash-panel wide-half" data-panel="maritime">
+      <!-- RENSEIGNEMENTS AÉRIENS — remonté pour combler le trou de la rangée -->
+      <div class="dash-panel" data-panel="airlines">
+        <div class="dash-head">
+          <h3>✈ RENSEIGNEMENTS AÉRIENS <span class="help">?</span></h3>
+        </div>
+        <ul class="airline-list" id="airlineList"></ul>
+      </div>
+
+      <!-- TRAFIC MARITIME LIVE — MarineTraffic embed (large, double hauteur) -->
+      <div class="dash-panel wide-half tall-double" data-panel="maritime">
         <div class="dash-head">
           <h3>⚓ TRAFIC MARITIME TEMPS RÉEL</h3>
           <span class="pill-live">LIVE</span>
@@ -441,8 +449,8 @@
         </div>
       </div>
 
-      <!-- TRAFIC AÉRIEN LIVE — ADS-B Exchange embed -->
-      <div class="dash-panel wide-half" data-panel="aerien">
+      <!-- TRAFIC AÉRIEN LIVE — ADS-B Exchange embed (large, double hauteur) -->
+      <div class="dash-panel wide-half tall-double" data-panel="aerien">
         <div class="dash-head">
           <h3>✈ TRAFIC AÉRIEN TEMPS RÉEL</h3>
           <span class="pill-live">LIVE</span>
@@ -453,14 +461,6 @@
         <div class="iframe-wrap">
           <iframe src="https://globe.adsbexchange.com/?lat=35&lon=30&zoom=4" allow="fullscreen" loading="lazy"></iframe>
         </div>
-      </div>
-
-      <!-- RENSEIGNEMENTS AÉRIENS -->
-      <div class="dash-panel" data-panel="airlines">
-        <div class="dash-head">
-          <h3>✈ RENSEIGNEMENTS AÉRIENS <span class="help">?</span></h3>
-        </div>
-        <ul class="airline-list" id="airlineList"></ul>
       </div>
 
     </section>
@@ -620,7 +620,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="data.js?v=35"></script>
-<script src="app.js?v=35"></script>
+<script src="data.js?v=36"></script>
+<script src="app.js?v=36"></script>
 </body>
 </html>
