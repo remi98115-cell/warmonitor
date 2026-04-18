@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=19" />
+<link rel="stylesheet" href="styles.css?v=20" />
 </head>
 <body>
 <div id="app">
@@ -253,6 +253,45 @@
         <div class="weather-grid" id="weatherGrid"></div>
       </div>
 
+      <!-- VUE D'ENSEMBLE RISQUES — moyenne live des scores Instabilité Pays (GDELT) -->
+      <div class="dash-panel" data-panel="risk">
+        <div class="dash-head">
+          <h3>VUE D'ENSEMBLE DES RISQUES</h3>
+          <span class="pill-live">LIVE</span>
+        </div>
+        <div class="risk-gauge">
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 120 120" class="gauge-svg">
+              <circle cx="60" cy="60" r="48" stroke="#222" stroke-width="10" fill="none"/>
+              <circle id="gaugeRing" cx="60" cy="60" r="48" stroke="#ffb020" stroke-width="10" fill="none"
+                stroke-dasharray="301" stroke-dashoffset="102" transform="rotate(-90 60 60)" stroke-linecap="round"/>
+            </svg>
+            <div class="gauge-text">
+              <div class="gauge-val" id="riskVal">—</div>
+              <div class="gauge-lbl">—</div>
+            </div>
+          </div>
+          <div class="gauge-trend">
+            <div class="gtrend-label">TENDANCE</div>
+            <div class="gtrend-val"><span id="riskTrendArrow">→</span> <span id="riskTrend">—</span></div>
+          </div>
+        </div>
+        <div class="risk-metrics">
+          <div class="rmet"><div class="rmet-val" id="metCritical">0</div><div class="rmet-lbl">PAYS CRITIQUES</div></div>
+          <div class="rmet"><div class="rmet-val" id="metAvg">—</div><div class="rmet-lbl">SCORE MOYEN</div></div>
+          <div class="rmet"><div class="rmet-val" id="metTone">—</div><div class="rmet-lbl">TON MOYEN GDELT</div></div>
+          <div class="rmet"><div class="rmet-val" id="metArticles">0</div><div class="rmet-lbl">DÉPÊCHES 24H</div></div>
+        </div>
+        <div class="risk-section">
+          <div class="risk-section-title">TOP 3 PAYS À RISQUE</div>
+          <ol class="risk-top" id="riskTop"></ol>
+        </div>
+        <div class="risk-foot">
+          <span>Calcul depuis Instabilité Pays (GDELT 24h)</span>
+          <span id="riskUpdated">—</span>
+        </div>
+      </div>
+
       <!-- CAM EN DIRECT — seul panneau cam (featured + thumbnails) -->
       <div class="dash-panel" data-panel="camwall">
         <div class="dash-head">
@@ -480,7 +519,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="data.js?v=19"></script>
-<script src="app.js?v=19"></script>
+<script src="data.js?v=20"></script>
+<script src="app.js?v=20"></script>
 </body>
 </html>

@@ -303,6 +303,7 @@
     earthquakes: { label: "Séismes en direct (USGS)",           src: "USGS Earthquake Hazards · M4.5+ semaine" },
     insights:    { label: "Insights IA",                        src: "GDELT 2.0 · USGS · NASA EONET · analyse locale" },
     instability: { label: "Instabilité Pays",                   src: "GDELT 2.0 · ton moyen 24h par pays (live)" },
+    risk:        { label: "Vue d'ensemble Risques",             src: "Moyenne live des scores Instabilité Pays (GDELT)" },
     intel:       { label: "Flux de Renseignements",             src: "GDELT 2.0 DOC API · monde entier · 24h" },
     intellive:   { label: "Renseignements en direct",           src: "GDELT 2.0 filtré par catégorie · temps réel" },
     market:      { label: "Implications pour le marché de l'IA",src: "CoinGecko (crypto) · ExchangeRate (forex)" },
@@ -784,6 +785,8 @@
       return { ...ctry, score, tone, articles, trend };
     }).sort((a, b) => b.score - a.score);
     try { localStorage.setItem("wm_instab_prev", JSON.stringify(next)); } catch {}
+    // Met à jour Vue d'ensemble Risques (moyenne live)
+    renderRiskGauge(enriched);
     ul.innerHTML = enriched.map(c => {
       const color = c.score >= 80 ? "var(--accent)" : c.score >= 60 ? "var(--warn)" : "var(--ok)";
       const arrow = c.trend > 1 ? `<span class="instab-arrow trend-up">↗ +${c.trend}</span>`
@@ -860,6 +863,55 @@
           <div class="intel-title"><a href="${escapeHtml(a.url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${escapeHtml(a.title || "")}</a></div>
         </li>`;
     }).join("");
+  }
+
+  // Vue d'ensemble Risques — moyenne live des scores Instabilité Pays (GDELT)
+  function renderRiskGauge(enriched) {
+    if (!enriched || !enriched.length) return;
+    const avg = Math.round(enriched.reduce((a, c) => a + c.score, 0) / enriched.length);
+    const critical = enriched.filter(c => c.score >= 70).length;
+    const totalArticles = enriched.reduce((a, c) => a + (c.articles || 0), 0);
+    const avgTone = enriched.reduce((a, c) => a + (c.tone || 0), 0) / enriched.length;
+    const lbl = avg >= 75 ? "CRITIQUE" : avg >= 60 ? "ÉLEVÉ" : avg >= 45 ? "MODÉRÉ" : "FAIBLE";
+    const color = avg >= 75 ? "#ff3040" : avg >= 60 ? "#ffb020" : avg >= 45 ? "#ffd25f" : "#22d39a";
+
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set("riskVal", avg);
+    set("metCritical", critical);
+    set("metAvg", avg);
+    set("metTone", avgTone.toFixed(1));
+    set("metArticles", totalArticles);
+    set("riskUpdated", new Date().toLocaleTimeString("fr-FR"));
+
+    const gaugeLbl = document.querySelector(".gauge-lbl");
+    if (gaugeLbl) { gaugeLbl.textContent = lbl; gaugeLbl.style.color = color; }
+    const ring = document.getElementById("gaugeRing");
+    if (ring) {
+      const C = 2 * Math.PI * 48;
+      ring.setAttribute("stroke-dasharray", C);
+      ring.setAttribute("stroke-dashoffset", C - (avg / 100) * C);
+      ring.setAttribute("stroke", color);
+    }
+
+    // Tendance vs avg précédent
+    const prev = parseFloat(localStorage.getItem("wm_risk_avg_prev") || avg);
+    let trend = "Stable", arrow = "→", trendCol = "var(--info)";
+    if (avg > prev + 1) { trend = "En escalade"; arrow = "↗"; trendCol = "var(--danger)"; }
+    else if (avg < prev - 1) { trend = "En baisse"; arrow = "↘"; trendCol = "var(--ok)"; }
+    try { localStorage.setItem("wm_risk_avg_prev", String(avg)); } catch {}
+    const trendEl = document.getElementById("riskTrend");
+    const arrowEl = document.getElementById("riskTrendArrow");
+    if (trendEl) { trendEl.textContent = trend; trendEl.style.color = trendCol; }
+    if (arrowEl) { arrowEl.textContent = arrow; arrowEl.style.color = trendCol; }
+
+    // Top 3 pays à risque
+    const top3 = [...enriched].sort((a, b) => b.score - a.score).slice(0, 3);
+    const topList = document.getElementById("riskTop");
+    if (topList) {
+      topList.innerHTML = top3.map(c =>
+        `<li>${escapeHtml(c.name)} <span style="color:var(--text-dim);font-weight:400">— score ${c.score} (ton ${c.tone.toFixed(1)})</span></li>`
+      ).join("");
+    }
   }
 
   // Insights — base (rapide, avant l'arrivée GDELT)
