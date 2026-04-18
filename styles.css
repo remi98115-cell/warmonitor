@@ -436,10 +436,18 @@ body.light-mode .leaflet-tile { filter: none; }
   padding: 12px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
   transition: background .2s, box-shadow .2s;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;                   /* scroll interne quand contenu > 320px */
   position: relative;
   min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
 }
+.dash-panel::-webkit-scrollbar { width: 6px; }
+.dash-panel::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+.dash-panel::-webkit-scrollbar-track { background: transparent; }
+/* Cas spéciaux : pas de double scroll dans news/cam (vidéos pleines tuiles) */
+[data-panel="news"], [data-panel="camwall"] { overflow: hidden; }
 .dash-panel:hover {
   box-shadow: inset 0 0 0 1px rgba(0,229,255,.25), inset 0 1px 0 rgba(255,255,255,.04);
   z-index: 2;
@@ -459,12 +467,11 @@ body.light-mode .leaflet-tile { filter: none; }
   [data-panel="news"], [data-panel="camwall"] { grid-column: 1 !important; grid-row: auto !important; }
 }
 
-/* Le contenu des tuiles défile à l'intérieur si trop haut */
-.dash-panel > *:last-child { min-height: 0; }
+/* Le scroll est géré par .dash-panel — listes internes en flux normal */
 .intel-feed, .intel-live, .xsrc-list, .market-list, .quake-list,
 .airline-list, .supply-list, .pred-list, .risk-alerts,
 .weather-grid, .instab-list, .commo-grid, .theater-list,
-.forecast-list { flex: 1; min-height: 0; overflow-y: auto; max-height: none !important; }
+.forecast-list { max-height: none !important; overflow: visible !important; }
 .dash-panel[hidden] { display: none !important; }
 
 /* Drag-drop verrouillé : pas de handle visible, pas de cursor grab */
