@@ -626,7 +626,6 @@
     france24en:  { name: "France 24 EN",   vid: "Ap-UM1O9RBU", yt: "UCQfwfsi5VrQ8yKZ-UWmAEFg" },
     france24ar:  { name: "France 24 AR",   vid: "3ursYA8HMeo", yt: "UCI1Y_nCwMGfPzZEgd60xH1Q" },
     franceinfo:  { name: "France Info",    vid: "NG7ZX42nZKc", yt: "UCyG16W5bfDnbE--rlpzfKEg" },
-    lci:         { name: "LCI",                                 yt: "UCBLG6kRQmHSrZ6cLvOosjxA" },
     dw:          { name: "DW News",        vid: "LuKwFajn37U", yt: "UCknLrEdhRCp1aegoMqRaCZg" },
     aljazeera:   { name: "Al Jazeera",     vid: "gCNeDWCI0vo", yt: "UCNye-wNBqNL5ZzHSJj3l8Bg" },
     skynews:     { name: "Sky News",       vid: "YDvsBbKfLPA", yt: "UCoMdktPbSTixAyNGwb-UYkQ" },
