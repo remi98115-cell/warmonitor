@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=16" />
+<link rel="stylesheet" href="styles.css?v=17" />
 </head>
 <body>
 <div id="app">
@@ -436,36 +436,6 @@
         </div>
       </div>
 
-      <!-- AI FORECASTS -->
-      <div class="dash-panel" data-panel="forecasts">
-        <div class="dash-head">
-          <h3>PRÉVISIONS DE L'IA <span class="help">?</span></h3>
-          <span class="pill-live">EN DIRECT</span>
-          <span class="count-badge" id="forecastCount">14</span>
-        </div>
-        <div class="chip-row" id="forecastCat">
-          <button class="active">All</button>
-          <button>Conflict</button>
-          <button>Market</button>
-          <button>Supply Chain</button>
-          <button>Political</button>
-          <button>Military</button>
-          <button>Cyber</button>
-          <button>Infra</button>
-        </div>
-        <div class="chip-row wrap" id="forecastRegion">
-          <button class="active">All Regions</button>
-          <button>MENA</button>
-          <button>East Asia</button>
-          <button>Europe</button>
-          <button>South Asia</button>
-          <button>Africa</button>
-          <button>LatAm</button>
-          <button>N. America</button>
-        </div>
-        <ul class="forecast-list" id="forecastList"></ul>
-      </div>
-
       <!-- FLUX DE RENSEIGNEMENTS -->
       <div class="dash-panel" data-panel="intel">
         <div class="dash-head">
@@ -492,15 +462,6 @@
           <button>🌊 Maritime</button>
         </div>
         <ul class="intel-live" id="intelLive"></ul>
-      </div>
-
-      <!-- CROSS-SOURCE SIGNAL AGGREGATOR -->
-      <div class="dash-panel" data-panel="xsrc">
-        <div class="dash-head">
-          <h3>AGRÉGATEUR DE SIGNAUX MULTI-SOURCES</h3>
-          <span class="count-badge">7</span>
-        </div>
-        <ul class="xsrc-list" id="xsrcList"></ul>
       </div>
 
       <!-- AI MARKET IMPLICATIONS — unlocked (test mode) -->
@@ -581,7 +542,7 @@
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-<script src="data.js?v=16"></script>
-<script src="app.js?v=16"></script>
+<script src="data.js?v=17"></script>
+<script src="app.js?v=17"></script>
 </body>
 </html>

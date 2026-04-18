@@ -302,12 +302,10 @@
     weather:     { label: "Météo monde",                        src: "Open-Meteo · mise à jour 15 min · 60 villes" },
     earthquakes: { label: "Séismes en direct (USGS)",           src: "USGS Earthquake Hazards · M4.5+ semaine" },
     insights:    { label: "Insights IA",                        src: "GDELT 2.0 · USGS · NASA EONET · analyse locale" },
-    forecasts:   { label: "Prévisions de l'IA",                 src: "Agrégation événements critiques · 14 projections" },
     instability: { label: "Instabilité Pays",                   src: "GDELT 2.0 · ton moyen 24h par pays (live)" },
     risk:        { label: "Vue d'ensemble Risques",             src: "Agrégation multi-sources (conflits + nat. + cyber)" },
     intel:       { label: "Flux de Renseignements",             src: "GDELT 2.0 DOC API · monde entier · 24h" },
     intellive:   { label: "Renseignements en direct",           src: "GDELT 2.0 filtré par catégorie · temps réel" },
-    xsrc:        { label: "Agrégateur de signaux multi-sources",src: "Signaux corrélés : militaire, cyber, éco, diplo" },
     market:      { label: "Implications pour le marché de l'IA",src: "CoinGecko (crypto) · ExchangeRate (forex)" },
     commodities: { label: "Matières premières",                 src: "Yahoo Finance · gold-api · live spot prices" },
     stocks:      { label: "Marchés boursiers",                  src: "Yahoo Finance · indices majeurs (différé ~15 min)" },
@@ -317,10 +315,8 @@
   };
 
   function renderDashboardPanels() {
-    renderForecasts();
     renderCamwall();
     renderInstability().catch(() => {});
-    renderXSrc();
     renderRiskGauge();
     renderInsights();
     renderNewsCount();
@@ -631,44 +627,6 @@
     } catch {}
   }
 
-  // Forecasts (mock generated from active events)
-  function renderForecasts() {
-    const list = document.getElementById("forecastList");
-    if (!list) return;
-    const topEvents = [...state.filtered].sort((a,b)=>severityWeight(b.sev)-severityWeight(a.sev)).slice(0, 14);
-    const forecasts = topEvents.map((e,i) => {
-      const p = Math.min(95, 40 + Math.round(severityWeight(e.sev) * 55 + Math.random()*10));
-      const cls = p > 70 ? "hi" : p > 45 ? "med" : "lo";
-      const timeframe = ["48h","7j","14j","30j","60j"][i % 5];
-      return {
-        prob: p, cls,
-        text: forecastText(e),
-        meta: `${(e.tags || []).slice(0,2).join(" · ") || "Géopolitique"} · ${timeframe}`,
-      };
-    });
-    list.innerHTML = forecasts.map(f => `
-      <li class="forecast-item">
-        <span class="prob ${f.cls}">${f.prob}%</span>
-        <div>
-          <div class="txt">${escapeHtml(f.text)}</div>
-          <div class="meta">${escapeHtml(f.meta)}</div>
-        </div>
-      </li>
-    `).join("");
-    const fc = document.getElementById("forecastCount");
-    if (fc) fc.textContent = forecasts.length;
-  }
-  function forecastText(e) {
-    const tpl = [
-      `Escalade probable autour de "${e.title}"`,
-      `Tension accrue : ${e.title}`,
-      `Risque de dégradation : ${e.title}`,
-      `Incident potentiel secondaire lié à ${e.title}`,
-      `Impact sur les marchés attendu suite à ${e.title}`,
-    ];
-    return tpl[Math.floor(Math.random()*tpl.length)];
-  }
-
   // News sources — live video IDs vérifiés via oEmbed (OK = embeddable).
   const NEWS_SOURCES = {
     france24:    { name: "France 24",      vid: "l8PMl7tUDIE", yt: "UCCCPCZNChQdGa9EkATeye4g" },
@@ -903,26 +861,6 @@
           <div class="intel-title"><a href="${escapeHtml(a.url)}" target="_blank" rel="noopener" style="color:var(--text);text-decoration:none">${escapeHtml(a.title || "")}</a></div>
         </li>`;
     }).join("");
-  }
-
-  // Cross-source aggregator
-  function renderXSrc() {
-    const ul = document.getElementById("xsrcList");
-    const badges = ["MIL FLTX","CYB SIG","ECO PULSE","DIP WATCH","ENERGY","WEATHER","MARITIME"];
-    const topEvents = [...state.filtered].sort((a,b)=>severityWeight(b.sev)-severityWeight(a.sev)).slice(0, 7);
-    ul.innerHTML = topEvents.map((e, i) => `
-      <li class="xsrc-item">
-        <span class="xsrc-num">${i+1}</span>
-        <div class="xsrc-body">
-          <div class="xsrc-tags" style="margin-bottom:4px">
-            <span class="intel-tag critical">● ${badges[i % badges.length]}</span>
-            <span class="intel-tag alert">${(e.sev||"med").toUpperCase()}</span>
-          </div>
-          <div class="xsrc-title">${escapeHtml(e.title || "Signal croisé détecté")}</div>
-          <div class="intel-meta"><span>${(e.tags||["Global"])[0]}</span><span>${e.date ? relDate(e.date) : "temps réel"}</span></div>
-        </div>
-      </li>
-    `).join("") || `<li class="xsrc-item">Aucun signal corrélé</li>`;
   }
 
   // Risk gauge — score géopolitique stable basé sur la sévérité cumulée.
@@ -1373,20 +1311,6 @@
     });
     document.addEventListener("keydown", e => {
       if (e.key === "Escape") closeCamModal();
-    });
-
-    // Forecast filters
-    document.getElementById("forecastCat").addEventListener("click", e => {
-      const b = e.target.closest("button"); if (!b) return;
-      document.querySelectorAll("#forecastCat button").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      renderForecasts();
-    });
-    document.getElementById("forecastRegion").addEventListener("click", e => {
-      const b = e.target.closest("button"); if (!b) return;
-      document.querySelectorAll("#forecastRegion button").forEach(x => x.classList.remove("active"));
-      b.classList.add("active");
-      renderForecasts();
     });
 
     // Intel tabs — all unlocked (test mode)
