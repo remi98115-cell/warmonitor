@@ -327,7 +327,6 @@
     injectPanelCloseButtons();
     applyHiddenPanels();
     applyPanelOrder();
-    refreshAddMenu();
     scheduleMasonry();
     // Async (fire-and-forget, errors caught inside)
     renderIntelFeed().catch(() => {});
@@ -610,23 +609,12 @@
     }).join("");
   }
 
-  // Panel close button + source badge injection
+  // Source badge injection (panneaux toujours visibles, pas de bouton ×)
   function injectPanelCloseButtons() {
     document.querySelectorAll(".dash-panel[data-panel]").forEach(p => {
       const head = p.querySelector(".dash-head");
       const meta = PANEL_META[p.dataset.panel];
-      if (head && !head.querySelector(".panel-close")) {
-        const btn = document.createElement("button");
-        btn.className = "panel-close";
-        btn.type = "button";
-        btn.innerHTML = "×";
-        btn.title = "Fermer le panneau";
-        btn.setAttribute("data-close-panel", "");
-        head.appendChild(btn);
-        btn.addEventListener("click", e => { e.stopPropagation(); hidePanel(p.dataset.panel); });
-      }
-      // Inject source line just under dash-head
-      if (meta?.src && !p.querySelector(".panel-source")) {
+      if (meta?.src && head && !p.querySelector(".panel-source")) {
         const src = document.createElement("div");
         src.className = "panel-source";
         src.title = meta.src;
@@ -635,29 +623,10 @@
       }
     });
   }
-  function hidePanel(id) {
-    const hidden = getHiddenPanels();
-    if (!hidden.includes(id)) hidden.push(id);
-    setHiddenPanels(hidden);
-    applyHiddenPanels();
-    refreshAddMenu();
-  }
-  function showPanel(id) {
-    setHiddenPanels(getHiddenPanels().filter(p => p !== id));
-    applyHiddenPanels();
-    refreshAddMenu();
-  }
-  function getHiddenPanels() {
-    try { return JSON.parse(localStorage.getItem("wm_hidden_panels") || "[]"); } catch { return []; }
-  }
-  function setHiddenPanels(arr) {
-    try { localStorage.setItem("wm_hidden_panels", JSON.stringify(arr)); } catch {}
-  }
   function applyHiddenPanels() {
-    const hidden = getHiddenPanels();
-    document.querySelectorAll(".dash-panel[data-panel]").forEach(p => {
-      p.hidden = hidden.includes(p.dataset.panel);
-    });
+    // Tous les panneaux toujours visibles + nettoie l'ancien stockage
+    try { localStorage.removeItem("wm_hidden_panels"); } catch {}
+    document.querySelectorAll(".dash-panel[data-panel]").forEach(p => { p.hidden = false; });
   }
   // Masonry — calcule grid-row: span N pour chaque panneau selon sa hauteur réelle.
   // Évite les trous : les panneaux longs prennent plus de lignes dans la grille.
@@ -672,29 +641,7 @@
       const map = {};
       dash.querySelectorAll(".dash-panel[data-panel]").forEach(p => { map[p.dataset.panel] = p; });
       saved.forEach(id => { if (map[id]) dash.appendChild(map[id]); });
-      // Move add-tile + footer-bar to end
-      const addTile = document.getElementById("addPanelTile");
-      if (addTile) dash.appendChild(addTile);
-      const footer = dash.querySelector(".world-monitor-bar");
-      if (footer) dash.appendChild(footer);
     } catch {}
-  }
-
-  function refreshAddMenu() {
-    const menu = document.getElementById("addMenu");
-    if (!menu) return;
-    const hidden = getHiddenPanels();
-    if (!hidden.length) {
-      menu.innerHTML = `<div class="am-empty">Tous les panneaux sont affichés</div>`;
-      return;
-    }
-    menu.innerHTML = hidden.map(id => `<button data-add="${id}">＋ ${escapeHtml(PANEL_META[id]?.label || id)}</button>`).join("");
-    menu.querySelectorAll("button[data-add]").forEach(b => {
-      b.addEventListener("click", () => {
-        showPanel(b.dataset.add);
-        menu.hidden = true;
-      });
-    });
   }
 
   // Forecasts (mock generated from active events)
@@ -1466,24 +1413,6 @@
       document.querySelectorAll("#commoTabs button").forEach(x => x.classList.remove("active"));
       b.classList.add("active");
       renderCommodities().catch(() => {});
-    });
-
-    // Add panel tile
-    const tile = document.getElementById("addPanelTile");
-    tile?.addEventListener("click", e => {
-      e.stopPropagation();
-      if (e.target.closest(".add-menu")) return; // menu button click handled separately
-      const menu = document.getElementById("addMenu");
-      if (!menu) return;
-      const willShow = menu.hidden;
-      menu.hidden = !willShow;
-      if (willShow) refreshAddMenu();
-    });
-    // Click anywhere else closes the menu
-    document.addEventListener("click", e => {
-      if (e.target.closest("#addPanelTile")) return;
-      const m = document.getElementById("addMenu");
-      if (m) m.hidden = true;
     });
 
     // Search
