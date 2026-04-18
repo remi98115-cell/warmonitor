@@ -429,6 +429,7 @@ body.light-mode .leaflet-tile { filter: none; }
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   grid-auto-rows: 320px;              /* Hauteur fixe par rangée → tuiles parfaitement alignées */
+  grid-auto-flow: dense;              /* Remplit les trous avec les panneaux suivants */
   gap: 0;
   padding: 0;
 }
@@ -465,6 +466,9 @@ body.light-mode .leaflet-tile { filter: none; }
 .dash-panel.span-full, .world-monitor-bar { grid-column: 1 / -1; }
 .dash-panel.wide-half { grid-column: span 3; }
 .dash-panel.tall-double { grid-row: span 2; }
+/* Maritime + Aérien forcés côte à côte sur les mêmes 2 rangées (bas) */
+.dash-panel[data-panel="maritime"] { grid-column: 1 / span 3; }
+.dash-panel[data-panel="aerien"]   { grid-column: 4 / span 3; }
 .dash-panel .iframe-wrap { flex: 1; min-height: 220px; position: relative; background: #000; border-radius: 4px; overflow: hidden; }
 .dash-panel .iframe-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .dash-panel .iframe-wrap iframe[loading="lazy"] { background: linear-gradient(135deg, #0a1024, #1a2a4a); }
