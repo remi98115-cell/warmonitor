@@ -349,11 +349,11 @@ body.light-mode {
 }
 #map { width: 100%; height: 100%; background: #000; }
 .leaflet-container { background: #000; font-family: inherit; }
-.leaflet-tile { filter: brightness(.55) saturate(1.3) hue-rotate(-10deg) contrast(1.1); }
+.leaflet-tile { filter: brightness(.85) saturate(1.2) hue-rotate(-5deg) contrast(1.05); }
 body.light-mode .leaflet-tile { filter: none; }
-/* Mobile : carte plus lumineuse pour lisibilité en plein jour */
+/* Mobile : carte encore plus lumineuse pour lisibilité en plein jour */
 @media (max-width: 900px) {
-  .leaflet-tile { filter: brightness(.95) saturate(1.1) contrast(1.0) !important; }
+  .leaflet-tile { filter: brightness(1.1) saturate(1.05) contrast(1.0) !important; }
 }
 .leaflet-control-zoom { border: none !important; margin: 14px !important; }
 .leaflet-control-zoom a { background: var(--bg-2) !important; color: var(--text) !important; border: 1px solid var(--border) !important; font-family: inherit !important; }
