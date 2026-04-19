@@ -239,17 +239,21 @@
       });
     }
     const m = L.marker([ev.lat, ev.lon], { icon });
+    // Aircraft : description riche en HTML déjà sanitisée à la source (data.js)
+    // Autres layers : escape pour sécurité
+    const descHtml = layer.id === "aircraft" ? (ev.desc || "") : escapeHtml(ev.desc || "");
+    const linkLabel = layer.id === "aircraft" ? "Voir vol sur FlightAware ↗" : "Source →";
     const html = `
       <div class="popup-title">${layer.icon} ${escapeHtml(ev.title || layer.label)}</div>
       <div class="popup-meta">
         ${ev.sev ? `<span class="popup-severity sev-${ev.sev}">${labelSev(ev.sev)}</span>` : ""}
         ${ev.date ? `<span>${relDate(ev.date)}</span>` : ""}
       </div>
-      <div class="popup-desc">${escapeHtml(ev.desc || "")}</div>
+      <div class="popup-desc">${descHtml}</div>
       ${(ev.tags || []).map(t => `<span class="popup-tag">${escapeHtml(t)}</span>`).join("")}
-      ${ev.url ? `<div style="margin-top:6px"><a href="${ev.url}" target="_blank" style="color:var(--accent);font-size:10px">Source →</a></div>` : ""}
+      ${ev.url ? `<div style="margin-top:6px"><a href="${ev.url}" target="_blank" style="color:var(--accent);font-size:10px">${linkLabel}</a></div>` : ""}
     `;
-    m.bindPopup(html);
+    m.bindPopup(html, { maxWidth: 320, minWidth: 240 });
     m.on("click", () => showDetail(ev, layer));
     return m;
   }

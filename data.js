@@ -792,13 +792,35 @@ WM.fetchers = {
         if (!a.lat || !a.lon || seen.has(a.hex)) return;
         seen.add(a.hex);
         const callsign = (a.flight || "").trim() || a.r || a.hex;
+        // Catégorie aircraft → libellé FR
+        const catLabel = { "A1":"Léger","A2":"Petit","A3":"Moyen","A4":"Gros","A5":"Très gros (Heavy)","A6":"Très haute perf.","A7":"Hélicoptère","B1":"Planeur","B2":"Ballon","B3":"Parachutiste","B4":"Ultraléger","B6":"Drone","B7":"Spatial","C1":"Véhicule sol","C2":"Service sol" }[a.category] || a.category || "?";
+        // Vitesse verticale
+        const vrate = a.baro_rate || 0;
+        const vrateLbl = vrate > 100 ? `↗ +${Math.abs(vrate)} ft/min` : vrate < -100 ? `↘ ${vrate} ft/min` : "→ niveau stable";
+        // Squawks particuliers
+        const squawkAlerts = { "7500":"⚠️ DÉTOURNEMENT","7600":"⚠️ Panne radio","7700":"🚨 URGENCE" };
+        const squawkAlert = squawkAlerts[a.squawk];
+        // Source ADS-B vs MLAT
+        const srcType = a.type === "mlat" ? "MLAT" : a.type === "adsb_icao" ? "ADS-B" : (a.type||"radar").toUpperCase();
+        // Description riche multi-ligne
+        const lines = [
+          `<b>Type :</b> ${a.t || "—"} (${catLabel})`,
+          `<b>Immatriculation :</b> ${a.r || "—"}`,
+          `<b>Altitude :</b> ${Math.round(a.alt_baro||0).toLocaleString("fr-FR")} ft (${Math.round((a.alt_baro||0)*0.3048).toLocaleString("fr-FR")} m)`,
+          `<b>Vitesse sol :</b> ${Math.round(a.gs||0)} kts (${Math.round((a.gs||0)*1.852)} km/h)`,
+          `<b>Cap :</b> ${Math.round(a.track||0)}°`,
+          `<b>Évolution :</b> ${vrateLbl}`,
+          `<b>Squawk :</b> ${a.squawk || "—"}${squawkAlert ? " " + squawkAlert : ""}`,
+          `<b>Source :</b> ${srcType} · ICAO ${a.hex.toUpperCase()}`,
+        ];
         all.push({
           id: "ac-" + a.hex,
           lat: a.lat, lon: a.lon,
-          title: "✈ " + callsign,
-          desc: `${a.t || "Aircraft"} · alt ${Math.round(a.alt_baro||0).toLocaleString("fr-FR")} ft · ${Math.round(a.gs||0)} kts · cap ${Math.round(a.track||0)}°`,
-          sev: "low",
-          tags: ["Aviation", a.t || "?"].concat(a.r ? ["Reg " + a.r] : []),
+          title: callsign,
+          desc: lines.join("<br/>"),
+          sev: squawkAlert ? "critical" : "low",
+          tags: ["Aviation", a.t || "?", catLabel].concat(a.r ? ["Reg " + a.r] : []),
+          url: `https://flightaware.com/live/flight/${encodeURIComponent(callsign)}`,
         });
       });
     }
