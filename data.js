@@ -322,8 +322,10 @@ WM.STATIC = {
 // ---------- LIVE FETCHERS ----------
 WM.liveFeeds = {
   // GDELT 2.0 DOC API — real-time global news.
-  // Note: GDELT impose 1 req / 5s. Sérialisation via une queue partagée.
-  // Filtre langue côté client (les queries (A OR B) sourcelang:X cassent).
+  // GDELT impose 1 req / 5s. Sérialisation via queue partagée.
+  // Stratégie langue : `sourcelang:French` SEUL fonctionne.
+  // Pour ajouter un keyword : `sourcelang:French keyword` (PAS de parens OR).
+  // Si query passe avec des OR : on filtre la langue client-side.
   _gdeltQueue: Promise.resolve(),
   _gdeltLastCall: 0,
   async _gdeltThrottle() {
@@ -331,17 +333,24 @@ WM.liveFeeds = {
     if (elapsed < 5500) await new Promise(r => setTimeout(r, 5500 - elapsed));
     this._gdeltLastCall = Date.now();
   },
-  async gdelt(queryKeywords = "conflit OR guerre OR attaque OR sanctions OR cyber", maxRecords = 25, preferLang = "French") {
-    // Sérialise tous les appels GDELT pour respecter le rate limit
+  async gdelt(queryKeywords = "", maxRecords = 25, preferLang = "French") {
     const me = this._gdeltQueue.then(() => this._gdeltDoFetch(queryKeywords, maxRecords, preferLang));
     this._gdeltQueue = me.catch(() => {});
     return me;
   },
   async _gdeltDoFetch(queryKeywords, maxRecords, preferLang) {
     await this._gdeltThrottle();
-    // Demande plus de résultats pour avoir de quoi filtrer après
-    const fetchSize = preferLang ? Math.min(75, maxRecords * 3) : maxRecords;
-    const q = encodeURIComponent(queryKeywords);
+    // Construit la query : sourcelang:French [keyword optionnel]
+    // Si queryKeywords contient OR/AND/parens → on l'utilise tel quel (pas de filtre langue dans la query)
+    let actualQuery, useClientLangFilter = false;
+    if (preferLang && (!queryKeywords || (!/\bOR\b|\bAND\b|[()]/.test(queryKeywords)))) {
+      actualQuery = `sourcelang:${preferLang}${queryKeywords ? " " + queryKeywords : ""}`;
+    } else {
+      actualQuery = queryKeywords || "sourcelang:French";
+      useClientLangFilter = !!preferLang;
+    }
+    const fetchSize = useClientLangFilter ? Math.min(75, maxRecords * 3) : maxRecords;
+    const q = encodeURIComponent(actualQuery);
     const base = `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&maxrecords=${fetchSize}&format=json&sort=datedesc&timespan=24h`;
     const attempts = [
       base,
@@ -367,11 +376,9 @@ WM.liveFeeds = {
           language: a.language,
           tone: a.tone,
         }));
-        // Filtrage langue préférée côté client. Fallback: tout si trop peu.
-        if (!preferLang) return all.slice(0, maxRecords);
+        if (!useClientLangFilter) return all.slice(0, maxRecords);
         const preferred = all.filter(a => a.language === preferLang);
         if (preferred.length >= Math.min(5, maxRecords)) return preferred.slice(0, maxRecords);
-        // Pas assez de FR → mix priorisant FR puis autres
         const others = all.filter(a => a.language !== preferLang);
         return [...preferred, ...others].slice(0, maxRecords);
       } catch (e) { /* try next */ }

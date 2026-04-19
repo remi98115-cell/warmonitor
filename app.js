@@ -922,7 +922,7 @@
     const ul = document.getElementById("intelFeed");
     if (!ul) return;
     ul.innerHTML = `<li class="intel-item" style="color:var(--text-dim);text-align:center">Chargement GDELT…</li>`;
-    const articles = await WM.liveFeeds.gdelt("(guerre OR conflit OR attentat OR sanctions)", 12);
+    const articles = await WM.liveFeeds.gdelt("", 12); // toute actu francophone récente
     if (!articles.length) {
       ul.innerHTML = `<li class="intel-item">GDELT momentanément inaccessible</li>`;
       return;
@@ -948,14 +948,23 @@
     const ul = document.getElementById("intelLive");
     if (!ul) return;
     const activeTab = document.querySelector("#intelTabs button.active")?.textContent?.toLowerCase() || "militaire";
-    let query = "(militaire OR armée OR défense OR offensive)";
-    if (activeTab.includes("cyber")) query = "(cyberattaque OR ransomware OR piratage OR cyber)";
-    else if (activeTab.includes("écono") || activeTab.includes("econo")) query = "(sanctions OR inflation OR récession OR économie)";
-    else if (activeTab.includes("maritime")) query = "(détroit OR navire OR maritime OR port OR maritime)";
+    // Filtre client-side par mots-clés selon l'onglet
+    const filters = {
+      militaire: /militaire|armée|défense|guerre|conflit|otan|missile|drone/i,
+      cyber: /cyber|piratage|ransomware|attaque informatique|hack/i,
+      éco: /écono|inflation|bourse|sanctions|gdp|récession|marché|finance/i,
+      maritime: /maritime|navire|détroit|port|naval|ais|cargo/i,
+    };
+    let filterRe = filters.militaire;
+    if (activeTab.includes("cyber")) filterRe = filters.cyber;
+    else if (activeTab.includes("écono") || activeTab.includes("econo")) filterRe = filters.éco;
+    else if (activeTab.includes("maritime")) filterRe = filters.maritime;
     ul.innerHTML = `<li class="intel-item" style="color:var(--text-dim);text-align:center">Chargement…</li>`;
-    const articles = await WM.liveFeeds.gdelt(query, 14);
+    // Fetch large batch (sourcelang:French alone), filtre client-side
+    const all = await WM.liveFeeds.gdelt("", 75);
+    const articles = all.filter(a => filterRe.test(a.title || "")).slice(0, 14);
     if (!articles.length) {
-      ul.innerHTML = `<li class="intel-item">Pas d'article disponible</li>`;
+      ul.innerHTML = `<li class="intel-item">Aucun article ${activeTab} sur 24h</li>`;
       return;
     }
     ul.innerHTML = articles.slice(0, 12).map(a => {
@@ -1077,7 +1086,7 @@
     const bodyEl = document.getElementById("insightBody");
     const footEl = document.querySelector(".insight-foot");
     if (!bodyEl) return;
-    const articles = await WM.liveFeeds.gdelt("(guerre OR crise OR sanctions)", 30);
+    const articles = await WM.liveFeeds.gdelt("", 30); // toute actu francophone récente
     if (!articles || !articles.length) return; // keep base text
 
     // Compte les pays et calcule le ton moyen
