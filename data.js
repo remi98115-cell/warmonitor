@@ -648,9 +648,39 @@ WM.liveFeeds = {
       const j = await r.json();
       const items = (j.vulnerabilities || []).map(x => x.cve);
       items.sort((a, b) => new Date(b.cisaExploitAdd || 0) - new Date(a.cisaExploitAdd || 0));
+      // Traduit les termes cyber EN→FR dans les noms de vulnérabilités
+      const cyberTr = (s) => (s || "")
+        .replace(/\bImproper Input Validation\b/gi, "Validation d'entrée incorrecte")
+        .replace(/\bImproper Authentication\b/gi, "Authentification incorrecte")
+        .replace(/\bImproper Access Control\b/gi, "Contrôle d'accès incorrect")
+        .replace(/\bImproper Authorization\b/gi, "Autorisation incorrecte")
+        .replace(/\bSQL Injection\b/gi, "Injection SQL")
+        .replace(/\bCommand Injection\b/gi, "Injection de commande")
+        .replace(/\bCode Injection\b/gi, "Injection de code")
+        .replace(/\bPath Traversal\b/gi, "Traversée de chemin")
+        .replace(/\bRemote Code Execution\b/gi, "Exécution de code à distance")
+        .replace(/\bArbitrary Code Execution\b/gi, "Exécution de code arbitraire")
+        .replace(/\bArbitrary File\b/gi, "Fichier arbitraire")
+        .replace(/\bPrivilege Escalation\b/gi, "Élévation de privilèges")
+        .replace(/\bAuthentication Bypass\b/gi, "Contournement d'authentification")
+        .replace(/\bBuffer Overflow\b/gi, "Dépassement de tampon")
+        .replace(/\bUse-After-Free\b/gi, "Use-After-Free (mémoire libérée)")
+        .replace(/\bMemory Corruption\b/gi, "Corruption mémoire")
+        .replace(/\bDeserialization\b/gi, "Désérialisation")
+        .replace(/\bCross-Site Scripting\b/gi, "Cross-Site Scripting (XSS)")
+        .replace(/\bCross-Site Request Forgery\b/gi, "Cross-Site Request Forgery (CSRF)")
+        .replace(/\bDenial of Service\b/gi, "Déni de service")
+        .replace(/\bInformation Disclosure\b/gi, "Divulgation d'information")
+        .replace(/\bPrototype Pollution\b/gi, "Pollution de prototype")
+        .replace(/\bServer-Side Request Forgery\b/gi, "Server-Side Request Forgery (SSRF)")
+        .replace(/\bRace Condition\b/gi, "Condition de course")
+        .replace(/\bOut-of-bounds\b/gi, "Hors limites")
+        .replace(/\bMissing\b/gi, "Manquant")
+        .replace(/\bVulnerability\b/gi, "Vulnérabilité")
+        .replace(/\bExploit(ed|ation)?\b/gi, m => m === "Exploit" ? "Exploit" : m === "Exploited" ? "Exploitée" : "Exploitation");
       return items.slice(0, 30).map(v => ({
         cve: v.id,
-        name: v.cisaVulnerabilityName || v.descriptions?.find(d=>d.lang==="en")?.value?.slice(0, 100) || "",
+        name: cyberTr(v.cisaVulnerabilityName || v.descriptions?.find(d=>d.lang==="en")?.value?.slice(0, 100) || ""),
         vendor: "",
         product: v.cisaRequiredAction ? "Action requise CISA" : "",
         date: v.cisaExploitAdd ? v.cisaExploitAdd.slice(0, 10) : "",
@@ -660,21 +690,75 @@ WM.liveFeeds = {
   },
 
   // Polymarket public API — prediction markets (avec proxy CORS fallback)
+  // Traduit la question d'un marché Polymarket EN→FR (heuristique)
+  _trPredict(q) {
+    if (!q) return q;
+    const replacements = [
+      // Patterns de questions typiques
+      [/^Will\s+(.+?)\s+win\s+/gi, "$1 va-t-il gagner "],
+      [/^Will\s+(.+?)\s+be\s+/gi, "$1 sera-t-il "],
+      [/^Will\s+(.+?)\s+finish\s+(in\s+)?(the\s+)?Top\s+(\d+)/gi, "$1 finira-t-il dans le Top $4"],
+      [/^Will\s+(.+?)\s+/gi, "$1 — "],
+      [/^Who\s+wins\s+/gi, "Qui gagne "],
+      [/^How\s+many\s+/gi, "Combien de "],
+      [/^What\s+/gi, "Quoi : "],
+      // Termes courants
+      [/\bElection\b/gi, "Élection"],
+      [/\bPresident\b/gi, "Président"],
+      [/\bPresidential\b/gi, "présidentielle"],
+      [/\bnominee\b/gi, "candidat"],
+      [/\bnominated\b/gi, "nommé"],
+      [/\bgame\b/gi, "match"],
+      [/\bGame\b/gi, "Match"],
+      [/\bover\b/gi, "plus de"],
+      [/\bunder\b/gi, "moins de"],
+      [/\bTotal Kills\b/gi, "Kills totaux"],
+      [/\bRepublican\b/gi, "Républicain"],
+      [/\bDemocrat(ic)?\b/gi, "Démocrate"],
+      [/\bin (the )?(\d{4})\b/g, "en $2"],
+      [/\bRussia\b/gi, "Russie"],
+      [/\bUkraine\b/gi, "Ukraine"],
+      [/\bIran\b/gi, "Iran"],
+      [/\bIsrael\b/gi, "Israël"],
+      [/\bChina\b/gi, "Chine"],
+      [/\bUSA\b/gi, "USA"],
+      [/\bbefore\b/gi, "avant"],
+      [/\bafter\b/gi, "après"],
+      [/\bthis year\b/gi, "cette année"],
+      [/\bnext year\b/gi, "l'année prochaine"],
+      [/\?$/g, " ?"],
+    ];
+    let out = q;
+    replacements.forEach(([re, fr]) => { out = out.replace(re, fr); });
+    return out;
+  },
+
   async polymarket() {
-    const base = "https://gamma-api.polymarket.com/markets?limit=10&active=true&closed=false&order=volume&ascending=false";
+    // Filtre sur tags géopolitiques/finance pour exclure le sport
+    const base = "https://gamma-api.polymarket.com/markets?limit=30&active=true&closed=false&order=volume&ascending=false";
     const attempts = [
       base,
       "https://corsproxy.io/?" + encodeURIComponent(base),
       "https://api.allorigins.win/raw?url=" + encodeURIComponent(base),
     ];
+    // Mots-clés à exclure (sports, jeux vidéo, etc.)
+    const excludeKw = /\b(NBA|NFL|NHL|MLB|UFC|game|match|RBC|Heritage|PGA|tournament|Bradley|Taylor|Im|Mackenzie|Heritage|tennis|golf|football|soccer|basketball|hockey|baseball|cricket|rugby|esports|League|Premier|series|round|stage|fight|player|coach|kick|score)\b/i;
+    // Mots-clés à privilégier (politique, économie, géopolitique)
+    const includeKw = /\b(Trump|Biden|Putin|Macron|Xi|Modi|election|president|war|conflict|sanctions|nuclear|Russia|Ukraine|China|Iran|Israel|Gaza|inflation|recession|GDP|Fed|rate|crypto|bitcoin|ethereum|BTC|ETH|oil|stock|S&P)\b/i;
     for (const url of attempts) {
       try {
         const r = await fetch(url);
         if (!r.ok) continue;
         const arr = await r.json();
         if (!Array.isArray(arr)) continue;
-        return arr.slice(0, 10).map(m => ({
-          question: m.question,
+        const filtered = arr.filter(m => {
+          const q = m.question || "";
+          if (excludeKw.test(q)) return false;
+          return includeKw.test(q) || arr.indexOf(m) < 5; // garde au moins quelques marchés top volume
+        });
+        const final = (filtered.length >= 5 ? filtered : arr).slice(0, 8);
+        return final.map(m => ({
+          question: this._trPredict(m.question),
           outcomes: (m.outcomePrices && JSON.parse(m.outcomePrices)) || [],
           volume: +m.volume || 0,
           endDate: m.endDate,
