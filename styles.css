@@ -467,7 +467,7 @@ body.light-mode .leaflet-tile { filter: none; }
 .dash-panel.span-full, .world-monitor-bar { grid-column: 1 / -1; }
 .dash-panel.wide-half { grid-column: span 3; }
 .dash-panel.tall-double { grid-row: span 2; }
-/* Maritime + Aérien : pleine largeur, l'un au-dessus de l'autre, en bas */
+/* Maritime + Aérien : pleine largeur, empilés en bas de page */
 .dash-panel[data-panel="maritime"] { grid-column: 1 / -1; }
 .dash-panel[data-panel="aerien"]   { grid-column: 1 / -1; }
 .dash-panel .iframe-wrap { flex: 1; min-height: 220px; position: relative; background: #000; border-radius: 4px; overflow: hidden; }
