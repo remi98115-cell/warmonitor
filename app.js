@@ -65,11 +65,19 @@
       maxBoundsViscosity: 1.0,
     }).setView(state.center, state.zoom);
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; OSM · CartoDB · Argos',
-      subdomains: "abcd",
+    // Satellite Esri (imagerie aérienne haute résolution)
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      attribution: '&copy; Esri · DigitalGlobe · Argos',
+      maxZoom: 18,
       noWrap: true,
       bounds: [[-90, -180], [90, 180]],
+    }).addTo(map);
+    // Surcouche labels (noms pays/villes) au-dessus du satellite
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}", {
+      attribution: '',
+      maxZoom: 18,
+      noWrap: true,
+      pane: "overlayPane",
     }).addTo(map);
 
     map.on("moveend", () => {
