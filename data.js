@@ -18,7 +18,7 @@ WM.LAYERS = [
   { id: "pipelines",     icon: "🛢",  label: "Oléoducs et gazoducs",         color: "#ffb020", cat: "infra" },
   { id: "datacenters",   icon: "🖥",  label: "Centres de données IA",        color: "#33d1ff", cat: "infra" },
   { id: "military",      icon: "✈",  label: "Activité militaire",           color: "#7a8bff", cat: "mil" },
-  { id: "shipping",      icon: "🚢",  label: "Trafic maritime",              color: "#4fc3f7", cat: "trade" },
+  { id: "shipping",      icon: "⚓",  label: "Ports & chokepoints maritimes",color: "#4fc3f7", cat: "trade" },
   { id: "aircraft",      icon: "✈",   label: "Avions en vol (live)",         color: "#00e5ff", cat: "trade", live: true },
   { id: "trade",         icon: "⚓",  label: "Routes commerciales",          color: "#22a3ff", cat: "trade" },
   { id: "weather",       icon: "⛈",  label: "Alertes météo",                color: "#22a3ff", cat: "env" },
