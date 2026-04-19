@@ -20,6 +20,7 @@ WM.LAYERS = [
   { id: "military",      icon: "✈",  label: "Activité militaire",           color: "#7a8bff", cat: "mil" },
   { id: "shipping",      icon: "⚓",  label: "Ports & chokepoints maritimes",color: "#4fc3f7", cat: "trade" },
   { id: "aircraft",      icon: "✈",   label: "Avions en vol (live)",         color: "#00e5ff", cat: "trade", live: true },
+  { id: "aisShips",      icon: "🚢",  label: "Navires AIS live (AISStream)", color: "#22d39a", cat: "trade", live: true },
   { id: "trade",         icon: "⚓",  label: "Routes commerciales",          color: "#22a3ff", cat: "trade" },
   { id: "weather",       icon: "⛈",  label: "Alertes météo",                color: "#22a3ff", cat: "env" },
   { id: "outages",       icon: "📡",  label: "Pannes Internet",              color: "#ff8a3b", cat: "cyber" },
@@ -829,33 +830,56 @@ WM.liveFeeds = {
 
 WM.fetchers = {
   // Avions en vol — adsb.lol API publique via CORS proxy (250 nm par zone)
-  // 16 zones de 250 nm = couverture mondiale partielle (océans = peu de stations)
+  // 35 zones × 250nm pour couverture mondiale maximale
   async aircraft() {
     const zones = [
-      // Europe & Med
+      // Europe Ouest/Centrale
       { lat: 51, lon: 0 },     // Londres
       { lat: 48, lon: 8 },     // Allemagne/France
       { lat: 41, lon: 12 },    // Italie
       { lat: 40, lon: -3 },    // Espagne
-      { lat: 50, lon: 30 },    // Ukraine
       { lat: 60, lon: 20 },    // Scandinavie
-      // MENA & Asie SO
+      { lat: 55, lon: 12 },    // Danemark/Pologne
+      // Europe Est / Russie
+      { lat: 50, lon: 30 },    // Ukraine
+      { lat: 55, lon: 37 },    // Moscou
+      { lat: 45, lon: 40 },    // Russie sud
+      // MENA
       { lat: 32, lon: 35 },    // Israël/Levant
       { lat: 25, lon: 55 },    // Émirats/Golfe
       { lat: 30, lon: 31 },    // Égypte/Suez
       { lat: 35, lon: 51 },    // Iran/Tehran
+      { lat: 36, lon: 3 },     // Algérie
+      // Afrique
+      { lat: 9, lon: 8 },      // Nigeria
+      { lat: -1, lon: 36 },    // Kenya
+      { lat: -26, lon: 28 },   // Johannesburg
+      { lat: 15, lon: -17 },   // Sénégal
+      // Asie SO/Sud
       { lat: 25, lon: 78 },    // Inde N
+      { lat: 13, lon: 80 },    // Inde S/Chennai
+      { lat: 24, lon: 67 },    // Pakistan
       // Asie E
       { lat: 39, lon: 116 },   // Pékin
+      { lat: 31, lon: 121 },   // Shanghai
       { lat: 35, lon: 139 },   // Tokyo
       { lat: 22, lon: 114 },   // Hong Kong
-      // Amériques
-      { lat: 40, lon: -74 },   // NYC/Côte Est
-      { lat: 35, lon: -118 },  // LA/Côte Ouest
+      { lat: 1, lon: 104 },    // Singapour
+      { lat: 14, lon: 121 },   // Manille
+      // Amériques Nord
+      { lat: 40, lon: -74 },   // NYC
+      { lat: 35, lon: -118 },  // LA
       { lat: 25, lon: -80 },   // Miami
+      { lat: 41, lon: -87 },   // Chicago
+      { lat: 32, lon: -96 },   // Dallas
+      { lat: 49, lon: -123 },  // Vancouver
+      // Amériques Sud
       { lat: -23, lon: -46 },  // São Paulo
+      { lat: -34, lon: -58 },  // Buenos Aires
+      { lat: 4, lon: -74 },    // Bogotá
       // Océanie
       { lat: -33, lon: 151 },  // Sydney
+      { lat: -36, lon: 174 },  // Auckland
     ];
     const all = [];
     const seen = new Set();
@@ -1101,6 +1125,114 @@ WM.fetchers = {
     } catch (e) { return null; }
   },
 };
+
+// ===== AISStream.io WebSocket — navires AIS live mondial =====
+// Free key fournie par utilisateur. Rotation possible si compromise.
+WM.aisLive = (() => {
+  const API_KEY = "bb8559a589dac8b3d5ca1df25bd654ebe764e1a9";
+  let ws = null;
+  const ships = new Map(); // mmsi → { lat, lon, sog, cog, name, type, lastSeen }
+  let listeners = [];
+
+  const TYPE_LABELS = {
+    30: "Pêche", 31: "Remorqueur", 32: "Remorqueur", 33: "Drague", 34: "Plongée",
+    35: "Militaire", 36: "Voilier", 37: "Plaisance",
+    40: "Haute vitesse", 50: "Pilote", 51: "SAR", 52: "Remorqueur", 53: "Port",
+    54: "Anti-pollution", 55: "Police", 60: "Passagers", 61: "Passagers", 62: "Passagers",
+    63: "Passagers", 64: "Passagers", 70: "Cargo", 71: "Cargo", 72: "Cargo",
+    73: "Cargo", 74: "Cargo", 80: "Tanker", 81: "Tanker", 82: "Tanker",
+    83: "Tanker", 84: "Tanker", 90: "Autre",
+  };
+
+  function connect() {
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+    ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
+    ws.onopen = () => {
+      // Subscribe sur 5 zones stratégiques (chokepoints + grands axes)
+      ws.send(JSON.stringify({
+        APIKey: API_KEY,
+        BoundingBoxes: [
+          [[24, 50], [29, 60]],     // Détroit d'Ormuz
+          [[10, 40], [18, 50]],     // Bab-el-Mandeb / Mer Rouge
+          [[28, 30], [35, 40]],     // Suez / Méditerranée Est
+          [[35, -10], [55, 30]],    // Atlantique Nord-Est / Manche / Méd Ouest
+          [[-5, 95], [10, 110]],    // Détroit de Malacca
+          [[20, 110], [40, 130]],   // Mer de Chine
+        ],
+        FilterMessageTypes: ["PositionReport", "ShipStaticData"],
+      }));
+      console.info("[AIS] WebSocket connecté");
+    };
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        const meta = msg.MetaData || {};
+        const mmsi = meta.MMSI;
+        if (!mmsi) return;
+        const existing = ships.get(mmsi) || {};
+        if (msg.MessageType === "PositionReport") {
+          const pr = msg.Message?.PositionReport || {};
+          existing.lat = pr.Latitude;
+          existing.lon = pr.Longitude;
+          existing.sog = pr.Sog;       // knots
+          existing.cog = pr.Cog;       // degrés
+          existing.heading = pr.TrueHeading;
+          existing.lastSeen = Date.now();
+          existing.mmsi = mmsi;
+          if (!existing.name) existing.name = meta.ShipName?.trim();
+        } else if (msg.MessageType === "ShipStaticData") {
+          const sd = msg.Message?.ShipStaticData || {};
+          existing.name = (sd.Name || meta.ShipName || "").trim();
+          existing.type = sd.Type;
+          existing.dest = (sd.Destination || "").trim();
+          existing.callsign = (sd.CallSign || "").trim();
+          existing.imo = sd.ImoNumber;
+        }
+        ships.set(mmsi, existing);
+      } catch {}
+    };
+    ws.onerror = (e) => { console.warn("[AIS] erreur WebSocket", e); };
+    ws.onclose = () => {
+      console.info("[AIS] WebSocket fermé, reconnexion dans 5s");
+      setTimeout(connect, 5000);
+    };
+  }
+
+  function disconnect() {
+    if (ws) { try { ws.close(); } catch {} ws = null; }
+  }
+
+  // Retourne la liste actuelle des navires positionnés (purge ceux > 30min)
+  function getShips() {
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    const out = [];
+    for (const [mmsi, s] of ships) {
+      if (!s.lat || !s.lon) continue;
+      if (s.lastSeen < cutoff) { ships.delete(mmsi); continue; }
+      const typeLabel = TYPE_LABELS[s.type] || "Navire";
+      out.push({
+        id: "ship-" + mmsi,
+        lat: s.lat, lon: s.lon,
+        title: s.name || "MMSI " + mmsi,
+        desc: [
+          `<b>Type :</b> ${typeLabel}${s.type ? " (code " + s.type + ")" : ""}`,
+          `<b>MMSI :</b> ${mmsi}`,
+          s.callsign ? `<b>Indicatif :</b> ${s.callsign}` : "",
+          s.imo ? `<b>IMO :</b> ${s.imo}` : "",
+          s.dest ? `<b>Destination :</b> ${s.dest}` : "",
+          `<b>Vitesse :</b> ${(s.sog || 0).toFixed(1)} kts (${Math.round((s.sog||0)*1.852)} km/h)`,
+          `<b>Cap :</b> ${Math.round(s.cog || 0)}°`,
+        ].filter(Boolean).join("<br/>"),
+        sev: "low",
+        tags: ["AIS", typeLabel],
+        url: `https://www.marinetraffic.com/en/ais/details/ships/mmsi:${mmsi}`,
+      });
+    }
+    return out;
+  }
+
+  return { connect, disconnect, getShips };
+})();
 
 function daysAgo(n) { return new Date(Date.now() - n*86400000).toISOString(); }
 
