@@ -775,12 +775,23 @@ body.light-mode .leaflet-tile { filter: none; }
   background: rgba(0,0,0,.75); color: #fff; padding: 3px 8px;
   border-radius: 3px; font-size: 10px; letter-spacing: .5px;
 }
+/* Vignettes cam : défilement horizontal (1 rangée, scroll smooth) */
 .cam-thumbs {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
-  margin-top: 6px;
+  display: flex; gap: 4px;
+  margin-top: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
 }
+.cam-thumbs::-webkit-scrollbar { height: 6px; }
+.cam-thumbs::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+.cam-thumbs::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius: 3px; }
 .cam-thumbs .cam-cell {
-  aspect-ratio: 16/10; position: relative; background: #000;
+  flex: 0 0 160px; height: 100px;
+  position: relative; background: #000;
   border-radius: 3px; overflow: hidden; cursor: pointer;
   border: 1px solid var(--border); transition: border-color .15s, transform .15s;
 }

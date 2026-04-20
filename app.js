@@ -1150,7 +1150,7 @@
     else if (active.includes("asie")) list = WEBCAMS.asia;
     else if (active.includes("espace") || active.includes("iss")) list = WEBCAMS.space;
     else list = WEBCAMS.all || [];
-    const items = list.slice(0, 8);
+    const items = list.slice(0, 20); // jusqu'à 20 vignettes pour défilement horizontal
     const countEl = document.getElementById("camCount");
     if (countEl) countEl.textContent = list.length;
     // Aperçu statique YouTube (image) au lieu d'iframe pour des thumbs cliquables et légers
