@@ -75,8 +75,10 @@ body.light-mode {
   scrollbar-width: thin;
   scrollbar-color: var(--border-2) transparent;
 }
-#rightbar::-webkit-scrollbar { width: 6px; }
-#rightbar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+#rightbar::-webkit-scrollbar { width: 12px; }
+#rightbar::-webkit-scrollbar-track { background: rgba(0,229,255,.06); }
+#rightbar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 6px rgba(0,229,255,.4); }
+#rightbar::-webkit-scrollbar-thumb:hover { background: var(--accent-2); background-clip: padding-box; }
 #right-panels { display: flex; flex-direction: column; gap: 0; padding: 0; }
 #right-panels .dash-panel { width: 100%; margin: 0; break-inside: auto; display: flex; border-radius: 0; }
 
@@ -226,8 +228,10 @@ body.light-mode {
   transition: transform .25s ease;
   scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
 }
-#sidebar::-webkit-scrollbar { width: 6px; }
-#sidebar::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+#sidebar::-webkit-scrollbar { width: 12px; }
+#sidebar::-webkit-scrollbar-track { background: rgba(0,229,255,.06); }
+#sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 6px; border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 6px rgba(0,229,255,.4); }
+#sidebar::-webkit-scrollbar-thumb:hover { background: var(--accent-2); background-clip: padding-box; }
 
 .panel { padding: 10px 12px; border-bottom: 1px solid var(--border); }
 .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -466,9 +470,10 @@ body.light-mode .leaflet-tile { filter: none; }
   scrollbar-width: thin;
   scrollbar-color: var(--border-2) transparent;
 }
-.dash-panel::-webkit-scrollbar { width: 6px; }
-.dash-panel::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
-.dash-panel::-webkit-scrollbar-track { background: transparent; }
+.dash-panel::-webkit-scrollbar { width: 10px; }
+.dash-panel::-webkit-scrollbar-track { background: rgba(0,229,255,.05); }
+.dash-panel::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+.dash-panel::-webkit-scrollbar-thumb:hover { background: var(--accent-2); background-clip: padding-box; }
 /* Cas spéciaux : pas de double scroll dans news/cam (vidéos pleines tuiles) */
 [data-panel="news"], [data-panel="camwall"] { overflow: hidden; }
 .dash-panel:hover {
@@ -786,9 +791,10 @@ body.light-mode .leaflet-tile { filter: none; }
   scrollbar-width: thin;
   scrollbar-color: var(--accent) transparent;
 }
-.cam-thumbs::-webkit-scrollbar { height: 6px; }
-.cam-thumbs::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
-.cam-thumbs::-webkit-scrollbar-track { background: rgba(255,255,255,.04); border-radius: 3px; }
+.cam-thumbs::-webkit-scrollbar { height: 10px; }
+.cam-thumbs::-webkit-scrollbar-track { background: rgba(0,229,255,.08); border-radius: 5px; }
+.cam-thumbs::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; box-shadow: 0 0 4px rgba(0,229,255,.5); }
+.cam-thumbs::-webkit-scrollbar-thumb:hover { background: var(--accent-2); background-clip: padding-box; }
 .cam-thumbs .cam-cell {
   flex: 0 0 160px; height: 100px;
   position: relative; background: #000;
