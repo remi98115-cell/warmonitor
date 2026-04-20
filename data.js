@@ -354,8 +354,8 @@ WM.liveFeeds = {
     const base = `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&maxrecords=${fetchSize}&format=json&sort=datedesc&timespan=24h`;
     const attempts = [
       base,
-      "https://corsproxy.io/?" + encodeURIComponent(base),
       "https://api.allorigins.win/raw?url=" + encodeURIComponent(base),
+      "https://corsproxy.io/?" + encodeURIComponent(base),
     ];
     for (const url of attempts) {
       try {
@@ -569,8 +569,8 @@ WM.liveFeeds = {
     const fetchOne = async (sym) => {
       const base = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=2d&interval=1d`;
       const attempts = [
-        "https://corsproxy.io/?" + encodeURIComponent(base),
         "https://api.allorigins.win/raw?url=" + encodeURIComponent(base),
+      "https://corsproxy.io/?" + encodeURIComponent(base),
       ];
       for (const url of attempts) {
         try {
@@ -601,8 +601,8 @@ WM.liveFeeds = {
   async _corsFetchJson(url) {
     const attempts = [
       url,
-      "https://corsproxy.io/?" + encodeURIComponent(url),
       "https://api.allorigins.win/raw?url=" + encodeURIComponent(url),
+      "https://corsproxy.io/?" + encodeURIComponent(url),
     ];
     for (const u of attempts) {
       try {
@@ -772,8 +772,8 @@ WM.liveFeeds = {
     const base = "https://gamma-api.polymarket.com/markets?limit=30&active=true&closed=false&order=volume&ascending=false";
     const attempts = [
       base,
-      "https://corsproxy.io/?" + encodeURIComponent(base),
       "https://api.allorigins.win/raw?url=" + encodeURIComponent(base),
+      "https://corsproxy.io/?" + encodeURIComponent(base),
     ];
     // Mots-clés à exclure (sports, jeux vidéo, etc.)
     const excludeKw = /\b(NBA|NFL|NHL|MLB|UFC|game|match|RBC|Heritage|PGA|tournament|Bradley|Taylor|Im|Mackenzie|Heritage|tennis|golf|football|soccer|basketball|hockey|baseball|cricket|rugby|esports|League|Premier|series|round|stage|fight|player|coach|kick|score)\b/i;
@@ -923,7 +923,7 @@ WM.fetchers = {
       const results = await Promise.all(slice.map(async z => {
         try {
           const url = `https://api.adsb.lol/v2/lat/${z.lat}/lon/${z.lon}/dist/250`;
-          const r = await fetch("https://corsproxy.io/?" + encodeURIComponent(url));
+          const r = await fetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(url));
           if (!r.ok) return [];
           const j = await r.json();
           return j.ac || [];
