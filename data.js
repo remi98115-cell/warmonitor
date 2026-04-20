@@ -564,7 +564,7 @@ WM.liveFeeds = {
     } catch (e) { console.warn("Open-Meteo multi failed", e); return []; }
   },
 
-  // Yahoo Finance helper — chart v8 (no auth) via CORS proxy, parallel par symbole
+  // Yahoo Finance helper — chart v8 (no auth) via CORS proxy, séquentiel pour éviter rate limit
   async _yahooQuotes(symbols) {
     const fetchOne = async (sym) => {
       const base = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=2d&interval=1d`;
@@ -589,7 +589,11 @@ WM.liveFeeds = {
       }
       return null;
     };
-    const results = await Promise.all(symbols.map(fetchOne));
+    const results = [];
+    for (const sym of symbols) {
+      results.push(await fetchOne(sym));
+      await new Promise(r => setTimeout(r, 150)); // petit délai entre symboles
+    }
     return results.filter(Boolean);
   },
 
